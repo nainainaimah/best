@@ -1,0 +1,140 @@
+{
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "swahili": "Swahili",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back"
+  },
+  "landing": {
+    "title": "PostMuse.ai",
+    "subtitle": "AI-Powered Social Content Assistant",
+    "description": "Create engaging social media content with AI-generated captions, smart scheduling, and visual planning tools.",
+    "features": {
+      "title": "Features",
+      "aiCaptions": "AI-Generated Captions",
+      "aiCaptionsDesc": "Get creative, on-brand captions in seconds",
+      "calendar": "Content Calendar",
+      "calendarDesc": "Plan and schedule your posts visually",
+      "grid": "3×3 Grid Planner",
+      "gridDesc": "Preview your Instagram feed layout",
+      "reminders": "Smart Reminders",
+      "remindersDesc": "Never miss a posting opportunity"
+    },
+    "cta": {
+      "signup": "Sign Up",
+      "login": "Log In",
+      "pricing": "View Pricing"
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signInButton": "Sign In",
+    "signUpButton": "Sign Up"
+  },
+  "pricing": {
+    "title": "Choose Your Plan",
+    "subtitle": "Simple, transparent pricing for content creators",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "selectPlan": "Select Plan",
+    "paymentInstructions": {
+      "title": "Payment Instructions",
+      "subtitle": "Make payment via Selcom bank transfer",
+      "bank": "Bank",
+      "bankName": "Selcom Microfinance Bank Tanzania Limited",
+      "accountName": "Account Name",
+      "accountHolder": "NAIMAN PASCAL KUNAMBI",
+      "accountNumber": "Account Number",
+      "accountNumbers": "55251 03068 129 OR 255 623 580 603",
+      "currency": "Currency",
+      "currencyValue": "TZS",
+      "swift": "SWIFT",
+      "swiftCode": "ACTZT ZTZ"
+    },
+    "uploadProof": {
+      "title": "Upload Payment Proof",
+      "plan": "Plan",
+      "referenceNumber": "Reference Number",
+      "screenshot": "Payment Screenshot",
+      "submit": "Submit for Approval",
+      "success": "Payment proof submitted successfully!",
+      "pending": "Your payment is pending approval"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "upcomingPosts": "Upcoming Posts",
+    "createPost": "Create New Post",
+    "scheduledFor": "Scheduled for",
+    "noPosts": "No scheduled posts yet",
+    "calendar": "Content Calendar"
+  },
+  "grid": {
+    "title": "Grid Planner",
+    "subtitle": "Preview your feed layout",
+    "emptySlot": "Empty slot"
+  },
+  "post": {
+    "title": "Title",
+    "caption": "Caption",
+    "scheduledAt": "Scheduled Date & Time",
+    "status": "Status",
+    "draft": "Draft",
+    "scheduled": "Scheduled",
+    "posted": "Posted",
+    "generateCaption": "Generate Caption with AI",
+    "generating": "Generating...",
+    "postNow": "Post Now",
+    "savePost": "Save Post",
+    "deletePost": "Delete Post",
+    "newPost": "New Post",
+    "editPost": "Edit Post",
+    "aiPrompt": {
+      "topic": "Topic",
+      "tone": "Tone",
+      "generate": "Generate"
+    }
+  },
+  "onboarding": {
+    "title": "Welcome to PostMuse.ai",
+    "subtitle": "Tell us about your brand",
+    "displayName": "Display Name",
+    "brandVoice": "Brand Voice",
+    "brandVoicePlaceholder": "Describe your brand's tone, style, target audience, and content preferences...",
+    "submit": "Complete Setup"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "pendingSubscriptions": "Pending Subscriptions",
+    "allSubscriptions": "All Subscriptions",
+    "user": "User",
+    "plan": "Plan",
+    "reference": "Reference",
+    "screenshot": "Screenshot",
+    "date": "Date",
+    "approve": "Approve",
+    "reject": "Reject",
+    "status": "Status",
+    "noPending": "No pending subscriptions"
+  },
+  "notifications": {
+    "testReminder": "Test Reminder",
+    "permissionDenied": "Notification permission denied",
+    "upcomingPost": "You have a post scheduled soon!"
+  }
+}

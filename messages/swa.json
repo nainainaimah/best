@@ -1,0 +1,140 @@
+{
+  "common": {
+    "language": "Lugha",
+    "english": "Kiingereza",
+    "swahili": "Kiswahili",
+    "loading": "Inapakia...",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "edit": "Hariri",
+    "create": "Unda",
+    "back": "Rudi"
+  },
+  "landing": {
+    "title": "PostMuse.ai",
+    "subtitle": "Msaidizi wa Maudhui ya Mitandao ya Kijamii unaotumia AI",
+    "description": "Unda maudhui ya kuvutia ya mitandao ya kijamii na maelezo yaliyoundwa na AI, uratibu wa akili, na zana za upangaji wa kuona.",
+    "features": {
+      "title": "Vipengele",
+      "aiCaptions": "Maelezo Yaliyoundwa na AI",
+      "aiCaptionsDesc": "Pata maelezo ya ubunifu yanayoendana na chapa yako kwa sekunde",
+      "calendar": "Kalenda ya Maudhui",
+      "calendarDesc": "Panga na uratibu machapisho yako kwa kuona",
+      "grid": "Kipanga Gridi ya 3×3",
+      "gridDesc": "Hakiki muonekano wa mlolongo wako wa Instagram",
+      "reminders": "Vikumbusho vya Akili",
+      "remindersDesc": "Usikose fursa ya kuchapisha"
+    },
+    "cta": {
+      "signup": "Jisajili",
+      "login": "Ingia",
+      "pricing": "Angalia Bei"
+    }
+  },
+  "auth": {
+    "signIn": "Ingia",
+    "signUp": "Jisajili",
+    "email": "Barua pepe",
+    "password": "Neno la siri",
+    "forgotPassword": "Umesahau neno la siri?",
+    "noAccount": "Huna akaunti?",
+    "hasAccount": "Tayari una akaunti?",
+    "signInButton": "Ingia",
+    "signUpButton": "Jisajili"
+  },
+  "pricing": {
+    "title": "Chagua Mpango Wako",
+    "subtitle": "Bei rahisi na wazi kwa waundaji wa maudhui",
+    "monthly": "Kila mwezi",
+    "yearly": "Kila mwaka",
+    "perMonth": "/mwezi",
+    "perYear": "/mwaka",
+    "selectPlan": "Chagua Mpango",
+    "paymentInstructions": {
+      "title": "Maagizo ya Malipo",
+      "subtitle": "Fanya malipo kupitia uhamisho wa benki ya Selcom",
+      "bank": "Benki",
+      "bankName": "Selcom Microfinance Bank Tanzania Limited",
+      "accountName": "Jina la Akaunti",
+      "accountHolder": "NAIMAN PASCAL KUNAMBI",
+      "accountNumber": "Nambari ya Akaunti",
+      "accountNumbers": "55251 03068 129 AU 255 623 580 603",
+      "currency": "Sarafu",
+      "currencyValue": "TZS",
+      "swift": "SWIFT",
+      "swiftCode": "ACTZT ZTZ"
+    },
+    "uploadProof": {
+      "title": "Pakia Uthibitisho wa Malipo",
+      "plan": "Mpango",
+      "referenceNumber": "Nambari ya Kumbukumbu",
+      "screenshot": "Picha ya Skrini ya Malipo",
+      "submit": "Wasilisha kwa Idhini",
+      "success": "Uthibitisho wa malipo umewasilishwa!",
+      "pending": "Malipo yako yanasubiri idhini"
+    }
+  },
+  "dashboard": {
+    "title": "Dashibodi",
+    "welcome": "Karibu tena",
+    "upcomingPosts": "Machapisho Yanayokuja",
+    "createPost": "Unda Chapisho Jipya",
+    "scheduledFor": "Imepangwa kwa",
+    "noPosts": "Hakuna machapisho yaliyopangwa bado",
+    "calendar": "Kalenda ya Maudhui"
+  },
+  "grid": {
+    "title": "Kipanga Gridi",
+    "subtitle": "Hakiki muonekano wa mlolongo wako",
+    "emptySlot": "Nafasi tupu"
+  },
+  "post": {
+    "title": "Kichwa",
+    "caption": "Maelezo",
+    "scheduledAt": "Tarehe na Wakati Uliopangwa",
+    "status": "Hali",
+    "draft": "Rasimu",
+    "scheduled": "Imepangwa",
+    "posted": "Imechapishwa",
+    "generateCaption": "Unda Maelezo na AI",
+    "generating": "Inaunda...",
+    "postNow": "Chapisha Sasa",
+    "savePost": "Hifadhi Chapisho",
+    "deletePost": "Futa Chapisho",
+    "newPost": "Chapisho Jipya",
+    "editPost": "Hariri Chapisho",
+    "aiPrompt": {
+      "topic": "Mada",
+      "tone": "Toni",
+      "generate": "Unda"
+    }
+  },
+  "onboarding": {
+    "title": "Karibu PostMuse.ai",
+    "subtitle": "Tuambie kuhusu chapa yako",
+    "displayName": "Jina la Kuonyesha",
+    "brandVoice": "Sauti ya Chapa",
+    "brandVoicePlaceholder": "Eleza toni ya chapa yako, mtindo, hadhira lengwa, na mapendeleo ya maudhui...",
+    "submit": "Maliza Usanidi"
+  },
+  "admin": {
+    "title": "Dashibodi ya Msimamizi",
+    "pendingSubscriptions": "Usajili Unasubiri",
+    "allSubscriptions": "Usajili Wote",
+    "user": "Mtumiaji",
+    "plan": "Mpango",
+    "reference": "Kumbukumbu",
+    "screenshot": "Picha ya Skrini",
+    "date": "Tarehe",
+    "approve": "Idhinisha",
+    "reject": "Kataa",
+    "status": "Hali",
+    "noPending": "Hakuna usajili unasubiri"
+  },
+  "notifications": {
+    "testReminder": "Kikumbusho cha Jaribio",
+    "permissionDenied": "Ruhusa ya arifa imekataliwa",
+    "upcomingPost": "Una chapisho lililopangwa hivi karibuni!"
+  }
+}
