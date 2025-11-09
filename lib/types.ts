@@ -11,9 +11,12 @@ export type BrandColors = {
 };
 
 export type BrandVoiceSliders = {
+  casual_professional?: number; // 0-100, 0=very casual, 100=very professional
   formal_casual?: number; // 0-100, 0=very formal, 100=very casual
   playful_serious?: number; // 0-100, 0=very playful, 100=very serious
   bold_soft?: number; // 0-100, 0=very bold, 100=very soft
+  short_detailed?: number; // 0-100, 0=very short, 100=very detailed
+  formal_conversational?: number; // 0-100, 0=very formal, 100=very conversational
 };
 
 export type BrandVoiceData = {
@@ -36,9 +39,13 @@ export type PostingHabits = {
   desiredDays?: string[]; // ["monday", "wednesday", "friday"]
   desiredTimes?: string[]; // ["09:00", "15:00"]
   frequency?: string; // "3x per week", "daily", etc.
+  preferred_times?: string[];
 };
 
 export type CaptionPreferences = {
+  default_hashtag_count?: string;
+  default_emoji_count?: string;
+  default_cta_style?: string;
   defaultLength?: 'short' | 'medium' | 'long' | 'custom';
   customMaxChars?: number;
   defaultHashtagCount?: number; // 3, 6, 10+
@@ -53,6 +60,7 @@ export type GridPreferences = {
   showBrandFrame?: boolean;
   showPlatformIcons?: boolean;
   showCategoryLabels?: boolean;
+  preferredPattern?: string;
 };
 
 // ============================================
