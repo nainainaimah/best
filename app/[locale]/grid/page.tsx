@@ -70,8 +70,7 @@ function SortableGridItem({
   // Get category color for pattern mode
   const getCategoryColor = (category?: string) => {
     const categoryObj = POST_CATEGORIES.find(c => c.id === category);
-    // return categoryObj?.color || '#9CA3AF';
-    return '#9CA3AF';
+    return categoryObj?.color || '#9CA3AF';
   };
 
   const borderStyle = showBrandFrame && brandColor
@@ -522,8 +521,8 @@ export default function GridPage() {
                 <button
                   onClick={() => setGridMode('instagram')}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gridMode === 'instagram'
-                      ? 'bg-white shadow-sm text-primary-600'
-                      : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white shadow-sm text-primary-600'
+                    : 'text-gray-600 hover:text-gray-900'
                     }`}
                 >
                   <Grid3x3 className="w-4 h-4" />
@@ -532,8 +531,8 @@ export default function GridPage() {
                 <button
                   onClick={() => setGridMode('generic')}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gridMode === 'generic'
-                      ? 'bg-white shadow-sm text-primary-600'
-                      : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white shadow-sm text-primary-600'
+                    : 'text-gray-600 hover:text-gray-900'
                     }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -545,8 +544,8 @@ export default function GridPage() {
               <button
                 onClick={() => setPatternMode(!patternMode)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${patternMode
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
                 <Palette className="w-4 h-4" />
@@ -557,8 +556,8 @@ export default function GridPage() {
               <button
                 onClick={() => setPreviewMode(!previewMode)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${previewMode
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
                 <Eye className="w-4 h-4" />
@@ -646,8 +645,8 @@ export default function GridPage() {
               <SortableContext items={itemIds} strategy={rectSortingStrategy}>
                 <div
                   className={`grid gap-2 ${gridMode === 'instagram'
-                      ? 'grid-cols-3'
-                      : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+                    ? 'grid-cols-3'
+                    : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
                     }`}
                 >
                   {gridPosts.map((post, index) => (
