@@ -103,6 +103,7 @@ export type Post = {
   platforms: string[]; // Array of platform names
   created_at: string;
   updated_at: string;
+  hashtags?: string[];
 };
 
 export type GridShare = {

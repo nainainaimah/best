@@ -1,5 +1,12 @@
 // PostMuse.ai Constants
 
+type Category = {
+  id: string;
+  name: string;
+  description: string;
+  color?: string;
+  label?: string;
+};
 export const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: '📷', color: '#E4405F' },
   { id: 'facebook', name: 'Facebook', icon: '👍', color: '#1877F2' },
@@ -12,7 +19,7 @@ export const PLATFORMS = [
   { id: 'pinterest', name: 'Pinterest', icon: '📌', color: '#E60023' },
 ];
 
-export const POST_CATEGORIES = [
+export const POST_CATEGORIES: Category[] = [
   { id: 'LISTING', name: 'Listing', description: 'Property or product listings' },
   { id: 'QUOTE', name: 'Quote', description: 'Inspirational or motivational quotes' },
   { id: 'TIP', name: 'Tip', description: 'Helpful tips and advice' },
