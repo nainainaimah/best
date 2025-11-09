@@ -128,7 +128,7 @@ Industry: ${industry}
 
   try {
     // Extract JSON array from response
-    const jsonMatch = result.match(/\[.*\]/s);
+    const jsonMatch = result.match(/\[.*\]/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
