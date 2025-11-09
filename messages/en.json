@@ -9,7 +9,9 @@
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
-    "back": "Back"
+    "back": "Back",
+    "logout": "Logout",
+    "profile": "Profile"
   },
   "landing": {
     "title": "PostMuse.ai",

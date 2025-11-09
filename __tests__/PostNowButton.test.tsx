@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import PostNowButton from '@/components/PostNowButton';
 import { NextIntlClientProvider } from 'next-intl';
 
@@ -70,13 +70,14 @@ describe('PostNowButton', () => {
     );
 
     const button = screen.getByText('Post Now');
-    fireEvent.click(button);
 
-    jest.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Your caption has been copied/i)).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(button);
+      await Promise.resolve(); // Flush promises
+      jest.advanceTimersByTime(1000);
     });
+
+    expect(screen.getByText(/Your caption has been copied/i)).toBeInTheDocument();
 
     jest.useRealTimers();
   });
@@ -91,20 +92,19 @@ describe('PostNowButton', () => {
     );
 
     const button = screen.getByText('Post Now');
-    fireEvent.click(button);
 
-    jest.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Your caption has been copied/i)).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(button);
+      await Promise.resolve(); // Flush promises
+      jest.advanceTimersByTime(1000);
     });
+
+    expect(screen.getByText(/Your caption has been copied/i)).toBeInTheDocument();
 
     const closeButton = screen.getByText('Got it!');
     fireEvent.click(closeButton);
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Your caption has been copied/i)).not.toBeInTheDocument();
-    });
+    expect(screen.queryByText(/Your caption has been copied/i)).not.toBeInTheDocument();
 
     jest.useRealTimers();
   });

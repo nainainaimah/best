@@ -3,13 +3,15 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import LanguageToggle from '@/components/LanguageToggle';
 
 export default function AuthPage() {
   const t = useTranslations();
   const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string;
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,14 +32,14 @@ export default function AuthPage() {
           password,
         });
         if (error) throw error;
-        router.push('/onboarding');
+        router.push(`/${locale}/onboarding`);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        router.push('/dashboard');
+        router.push(`/${locale}/dashboard`);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -53,7 +55,7 @@ export default function AuthPage() {
       </div>
 
       <div className="card max-w-md w-full">
-        <Link href="/" className="block text-center mb-6">
+        <Link href={`/${locale}`} className="block text-center mb-6">
           <h1 className="text-3xl font-bold text-primary-600">PostMuse.ai</h1>
         </Link>
 

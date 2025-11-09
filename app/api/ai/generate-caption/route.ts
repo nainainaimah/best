@@ -11,9 +11,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if API key exists
+    if (!process.env.OPENROUTER_API_KEY) {
+      console.error('OPENROUTER_API_KEY is not set');
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      );
+    }
+
     const prompt = language === 'swa'
       ? `Unda maelezo ya Instagram kuhusu "${topic}". ${tone ? `Tumia toni ya ${tone}.` : ''} Fanya kuwa fupi, ya kuvutia, na chenye nguvu. Jumuisha emoji zinazofaa.`
       : `Generate an engaging Instagram caption about "${topic}". ${tone ? `Use a ${tone} tone.` : ''} Make it short, catchy, and impactful. Include relevant emojis.`;
+
+    console.log('Generating caption for topic:', topic);
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -31,21 +42,37 @@ export async function POST(request: NextRequest) {
             content: prompt,
           },
         ],
+        max_tokens: 150,
+        temperature: 0.8,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('OpenRouter API request failed');
+      const errorText = await response.text();
+      console.error('OpenRouter API error:', response.status, errorText);
+      return NextResponse.json(
+        { error: `AI service error: ${response.status}` },
+        { status: 500 }
+      );
     }
 
     const data = await response.json();
     const caption = data.choices[0]?.message?.content || '';
 
+    if (!caption) {
+      console.error('No caption generated from AI');
+      return NextResponse.json(
+        { error: 'No caption generated' },
+        { status: 500 }
+      );
+    }
+
+    console.log('Caption generated successfully');
     return NextResponse.json({ caption });
-  } catch (error) {
+  } catch (error: any) {
     console.error('AI caption generation error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate caption' },
+      { error: error.message || 'Failed to generate caption' },
       { status: 500 }
     );
   }

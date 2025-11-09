@@ -5,7 +5,11 @@ import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
-export default function UploadProof() {
+type UploadProofProps = {
+  locale: string;
+};
+
+export default function UploadProof({ locale }: UploadProofProps) {
   const t = useTranslations();
   const router = useRouter();
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('monthly');
@@ -59,7 +63,7 @@ export default function UploadProof() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(`/${locale}/dashboard`);
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'An error occurred');

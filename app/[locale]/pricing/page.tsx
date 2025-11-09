@@ -1,18 +1,23 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import LanguageToggle from '@/components/LanguageToggle';
 import PlanCard from '@/components/PlanCard';
 import UploadProof from '@/components/UploadProof';
 
-export default function PricingPage() {
-  const t = useTranslations();
+export default async function PricingPage({
+  params
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations();
 
   return (
     <div className="min-h-screen">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <h1 className="text-2xl font-bold text-primary-600">{t('landing.title')}</h1>
             </Link>
             <LanguageToggle />
@@ -66,7 +71,7 @@ export default function PricingPage() {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <UploadProof />
+          <UploadProof locale={locale} />
         </div>
       </main>
     </div>

@@ -62,24 +62,42 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const locale = pathname.split('/')[1]
 
-  const protectedRoutes = ['/dashboard', '/grid', '/post', '/onboarding']
-  const adminRoutes = ['/admin']
+  const protectedRoutes = ['/dashboard', '/grid', '/post', '/onboarding', '/admin', '/profile']
+  const publicRoutes = ['/auth', '/pricing']
   const isProtectedRoute = protectedRoutes.some(route => pathname.includes(route))
+  const isPublicRoute = publicRoutes.some(route => pathname.includes(route))
+  const adminRoutes = ['/admin']
   const isAdminRoute = adminRoutes.some(route => pathname.includes(route))
 
-  if (isProtectedRoute || isAdminRoute) {
+  // Check authentication for protected routes
+  if (isProtectedRoute) {
     if (!user) {
       return NextResponse.redirect(new URL(`/${locale}/auth`, request.url))
     }
 
+    // Check onboarding completion (except for onboarding and pricing pages)
+    if (!pathname.includes('/onboarding') && !pathname.includes('/pricing')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_complete')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!profile?.onboarding_complete) {
+        return NextResponse.redirect(new URL(`/${locale}/onboarding`, request.url))
+      }
+    }
+
+    // Admin route check
     if (isAdminRoute) {
-      const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim())
+      const adminEmails = (process.env.ADMIN_EMAILS || 'naimakunambi@gmail.com').split(',').map(e => e.trim())
       if (!adminEmails.includes(user.email || '')) {
         return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url))
       }
     }
 
-    if (isProtectedRoute && !pathname.includes('/onboarding')) {
+    // Subscription check for main app routes (not onboarding, pricing, or admin)
+    if (!pathname.includes('/onboarding') && !pathname.includes('/pricing') && !isAdminRoute) {
       const { data: subscriptions } = await supabase
         .from('subscriptions')
         .select('*')

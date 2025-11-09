@@ -9,7 +9,9 @@
     "delete": "Futa",
     "edit": "Hariri",
     "create": "Unda",
-    "back": "Rudi"
+    "back": "Rudi",
+    "logout": "Toka",
+    "profile": "Wasifu"
   },
   "landing": {
     "title": "PostMuse.ai",
