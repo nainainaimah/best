@@ -70,7 +70,8 @@ function SortableGridItem({
   // Get category color for pattern mode
   const getCategoryColor = (category?: string) => {
     const categoryObj = POST_CATEGORIES.find(c => c.id === category);
-    return categoryObj?.color || '#9CA3AF';
+    // return categoryObj?.color || '#9CA3AF';
+    return '#9CA3AF';
   };
 
   const borderStyle = showBrandFrame && brandColor
@@ -81,9 +82,8 @@ function SortableGridItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`aspect-square bg-gray-100 rounded-lg overflow-hidden relative ${
-        !previewMode && post ? 'cursor-move' : ''
-      }`}
+      className={`aspect-square bg-gray-100 rounded-lg overflow-hidden relative ${!previewMode && post ? 'cursor-move' : ''
+        }`}
       onMouseEnter={() => !previewMode && setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -521,22 +521,20 @@ export default function GridPage() {
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setGridMode('instagram')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    gridMode === 'instagram'
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gridMode === 'instagram'
                       ? 'bg-white shadow-sm text-primary-600'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <Grid3x3 className="w-4 h-4" />
                   Instagram
                 </button>
                 <button
                   onClick={() => setGridMode('generic')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    gridMode === 'generic'
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gridMode === 'generic'
                       ? 'bg-white shadow-sm text-primary-600'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
                   Generic
@@ -546,11 +544,10 @@ export default function GridPage() {
               {/* Pattern Mode */}
               <button
                 onClick={() => setPatternMode(!patternMode)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  patternMode
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${patternMode
                     ? 'bg-purple-100 text-purple-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 <Palette className="w-4 h-4" />
                 Pattern Mode
@@ -559,11 +556,10 @@ export default function GridPage() {
               {/* Preview Mode */}
               <button
                 onClick={() => setPreviewMode(!previewMode)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  previewMode
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${previewMode
                     ? 'bg-blue-100 text-blue-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 <Eye className="w-4 h-4" />
                 Preview
@@ -649,11 +645,10 @@ export default function GridPage() {
             >
               <SortableContext items={itemIds} strategy={rectSortingStrategy}>
                 <div
-                  className={`grid gap-2 ${
-                    gridMode === 'instagram'
+                  className={`grid gap-2 ${gridMode === 'instagram'
                       ? 'grid-cols-3'
                       : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
-                  }`}
+                    }`}
                 >
                   {gridPosts.map((post, index) => (
                     <SortableGridItem
