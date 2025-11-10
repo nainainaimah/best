@@ -6,6 +6,7 @@ type Category = {
   description: string;
   color?: string;
   label?: string;
+
 };
 export const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: '📷', color: '#E4405F' },
