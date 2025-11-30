@@ -283,8 +283,9 @@ export default function GridPage() {
         .eq('user_id', user.id);
 
       // Instagram mode: Only posts with Instagram platform
+      // Use @> operator for JSONB containment
       if (gridMode === 'instagram') {
-        query = query.contains('platforms', ['instagram']);
+        query = query.filter('platforms', 'cs', '["instagram"]');
       }
 
       // Sort by grid_position if set, otherwise by scheduled_at

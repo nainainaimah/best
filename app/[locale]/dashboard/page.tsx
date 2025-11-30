@@ -99,7 +99,7 @@ export default function DashboardPage() {
         .from('posts')
         .select('*')
         .eq('user_id', user.id)
-        .contains('platforms', ['instagram'])
+        .filter('platforms', 'cs', '["instagram"]')
         .in('status', ['scheduled', 'posted'])
         .order('scheduled_at', { ascending: true })
         .limit(6);
