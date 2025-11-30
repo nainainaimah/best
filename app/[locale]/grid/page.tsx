@@ -235,11 +235,22 @@ export default function GridPage() {
   const [error, setError] = useState<string | null>(null);
   const [gridMode, setGridMode] = useState<'instagram' | 'generic'>('instagram');
   const [patternMode, setPatternMode] = useState(false);
+  const [selectedPattern, setSelectedPattern] = useState<string>('none');
   const [previewMode, setPreviewMode] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [generatingLink, setGeneratingLink] = useState(false);
   const supabase = createClient();
+
+  // Pattern types
+  const PATTERNS = [
+    { id: 'none', name: 'No Pattern', description: 'Chronological order' },
+    { id: 'checkerboard', name: 'Checkerboard', description: 'Alternating categories diagonally' },
+    { id: 'row', name: 'Row Alternating', description: 'Alternate by rows' },
+    { id: 'column', name: 'Column Alternating', description: 'Alternate by columns' },
+    { id: 'diagonal', name: 'Diagonal', description: 'Diagonal stripes' },
+    { id: 'rainbow', name: 'Rainbow', description: 'Color spectrum' },
+  ];
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -251,6 +262,13 @@ export default function GridPage() {
   useEffect(() => {
     loadData();
   }, [gridMode]);
+
+  // Load pattern preference from profile
+  useEffect(() => {
+    if (profile?.grid_preferences?.preferredPattern) {
+      setSelectedPattern(profile.grid_preferences.preferredPattern);
+    }
+  }, [profile]);
 
   const loadData = async () => {
     setLoading(true);
@@ -315,6 +333,121 @@ export default function GridPage() {
     }
   };
 
+  // Apply pattern to reorganize posts
+  const applyPattern = (postsToArrange: Post[], pattern: string): Post[] => {
+    if (pattern === 'none' || !postsToArrange.length) return postsToArrange;
+
+    const gridSize = gridMode === 'instagram' ? 9 : 12;
+    const cols = 3;
+    const arranged = [...postsToArrange];
+
+    switch (pattern) {
+      case 'checkerboard':
+        // Group by category, then alternate
+        const categories = POST_CATEGORIES.map(c => c.id);
+        const postsByCategory = categories.map(cat =>
+          arranged.filter(p => p.category === cat)
+        ).filter(group => group.length > 0);
+
+        const checkerboard: Post[] = [];
+        let categoryIndex = 0;
+        for (let i = 0; i < gridSize && checkerboard.length < arranged.length; i++) {
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          const patternIndex = (row + col) % postsByCategory.length;
+
+          if (postsByCategory[patternIndex] && postsByCategory[patternIndex].length > 0) {
+            checkerboard.push(postsByCategory[patternIndex].shift()!);
+          }
+        }
+        return checkerboard;
+
+      case 'row':
+        // Alternate categories by row
+        const rowGroups = POST_CATEGORIES.map(c =>
+          arranged.filter(p => p.category === c.id)
+        ).filter(g => g.length > 0);
+
+        const rowPattern: Post[] = [];
+        for (let row = 0; row < Math.ceil(gridSize / cols); row++) {
+          const groupIndex = row % rowGroups.length;
+          for (let col = 0; col < cols; col++) {
+            if (rowGroups[groupIndex] && rowGroups[groupIndex].length > 0) {
+              rowPattern.push(rowGroups[groupIndex].shift()!);
+            }
+          }
+        }
+        return rowPattern;
+
+      case 'column':
+        // Alternate categories by column
+        const colGroups = POST_CATEGORIES.map(c =>
+          arranged.filter(p => p.category === c.id)
+        ).filter(g => g.length > 0);
+
+        const colPattern: Post[] = [];
+        for (let i = 0; i < gridSize && colPattern.length < arranged.length; i++) {
+          const col = i % cols;
+          const groupIndex = col % colGroups.length;
+          if (colGroups[groupIndex] && colGroups[groupIndex].length > 0) {
+            colPattern.push(colGroups[groupIndex].shift()!);
+          }
+        }
+        return colPattern;
+
+      case 'diagonal':
+        // Diagonal stripes
+        const diagGroups = POST_CATEGORIES.map(c =>
+          arranged.filter(p => p.category === c.id)
+        ).filter(g => g.length > 0);
+
+        const diagonal: Post[] = [];
+        for (let i = 0; i < gridSize && diagonal.length < arranged.length; i++) {
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          const diagIndex = (row + col) % diagGroups.length;
+          if (diagGroups[diagIndex] && diagGroups[diagIndex].length > 0) {
+            diagonal.push(diagGroups[diagIndex].shift()!);
+          }
+        }
+        return diagonal;
+
+      case 'rainbow':
+        // Sort by category in order
+        return arranged.sort((a, b) => {
+          const aIndex = POST_CATEGORIES.findIndex(c => c.id === a.category);
+          const bIndex = POST_CATEGORIES.findIndex(c => c.id === b.category);
+          return aIndex - bIndex;
+        });
+
+      default:
+        return arranged;
+    }
+  };
+
+  // Handle pattern change
+  const handlePatternChange = async (pattern: string) => {
+    setSelectedPattern(pattern);
+
+    // Save to profile
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && profile) {
+        await supabase
+          .from('profiles')
+          .update({
+            grid_preferences: {
+              ...profile.grid_preferences,
+              preferredPattern: pattern,
+            }
+          })
+          .eq('user_id', user.id);
+      }
+    } catch (error) {
+      console.error('Error saving pattern preference:', error);
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -327,6 +460,11 @@ export default function GridPage() {
 
     const newPosts = arrayMove(posts, oldIndex, newIndex);
     setPosts(newPosts);
+
+    // When user manually drags, disable pattern temporarily
+    if (selectedPattern !== 'none') {
+      setSelectedPattern('none');
+    }
 
     // Update grid_position in database
     try {
@@ -479,9 +617,14 @@ export default function GridPage() {
     }
   };
 
+  // Apply pattern if selected
+  const arrangedPosts = selectedPattern !== 'none' && patternMode
+    ? applyPattern(posts, selectedPattern)
+    : posts;
+
   // Fill grid with posts or empty slots
-  const gridSize = gridMode === 'instagram' ? 9 : Math.max(12, Math.ceil(posts.length / 4) * 4);
-  const gridPosts = Array(gridSize).fill(null).map((_, i) => posts[i] || null);
+  const gridSize = gridMode === 'instagram' ? 9 : Math.max(12, Math.ceil(arrangedPosts.length / 4) * 4);
+  const gridPosts = Array(gridSize).fill(null).map((_, i) => arrangedPosts[i] || null);
   const itemIds = gridPosts.map((post, idx) => post?.id || `empty-${idx}`);
 
   const showBrandFrame = profile?.grid_preferences?.showBrandFrame || false;
@@ -571,6 +714,21 @@ export default function GridPage() {
                 Pattern Mode
               </button>
 
+              {/* Pattern Selector (shown when pattern mode is active) */}
+              {patternMode && (
+                <select
+                  value={selectedPattern}
+                  onChange={(e) => handlePatternChange(e.target.value)}
+                  className="px-3 py-2 rounded-md text-sm font-medium bg-purple-50 text-purple-800 border-2 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors"
+                >
+                  {PATTERNS.map((pattern) => (
+                    <option key={pattern.id} value={pattern.id}>
+                      {pattern.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               {/* Preview Mode */}
               <button
                 onClick={() => setPreviewMode(!previewMode)}
@@ -622,20 +780,53 @@ export default function GridPage() {
           </div>
         </div>
 
-        {/* Pattern Legend */}
+        {/* Pattern Info & Legend */}
         {patternMode && (
           <div className="card mb-6 bg-purple-50 border-2 border-purple-200">
-            <h3 className="font-semibold text-sm mb-3 text-purple-900">Category Colors:</h3>
-            <div className="flex flex-wrap gap-2">
-              {POST_CATEGORIES.map((category) => (
-                <div key={category.id} className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: category.color }}
-                  ></div>
-                  <span className="text-sm text-gray-700">{category.label}</span>
-                </div>
-              ))}
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="font-semibold text-lg text-purple-900 mb-1">
+                  🎨 Pattern Mode Active
+                </h3>
+                {selectedPattern !== 'none' && (
+                  <p className="text-sm text-purple-700">
+                    Current Pattern: <strong>{PATTERNS.find(p => p.id === selectedPattern)?.name}</strong>
+                    {' '}- {PATTERNS.find(p => p.id === selectedPattern)?.description}
+                  </p>
+                )}
+                {selectedPattern === 'none' && (
+                  <p className="text-sm text-purple-700">
+                    Select a pattern above to automatically arrange your grid
+                  </p>
+                )}
+              </div>
+              {selectedPattern !== 'none' && (
+                <button
+                  onClick={() => handlePatternChange('none')}
+                  className="text-sm px-3 py-1 bg-white text-purple-700 rounded hover:bg-purple-100 transition-colors"
+                >
+                  Clear Pattern
+                </button>
+              )}
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm mb-2 text-purple-800">Category Colors:</h4>
+              <div className="flex flex-wrap gap-2">
+                {POST_CATEGORIES.map((category) => (
+                  <div key={category.id} className="flex items-center gap-2">
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: category.color }}
+                    ></div>
+                    <span className="text-sm text-gray-700">{category.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-purple-200">
+              <p className="text-xs text-purple-600">
+                💡 Tip: Drag & drop posts to override the pattern. Pattern resets when you manually arrange posts.
+              </p>
             </div>
           </div>
         )}
