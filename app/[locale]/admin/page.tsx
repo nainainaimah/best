@@ -8,6 +8,7 @@ import type { Subscription, Profile } from '@/lib/types';
 import { PLATFORMS } from '@/lib/constants';
 import LanguageToggle from '@/components/LanguageToggle';
 import LogoutButton from '@/components/LogoutButton';
+import Toast from '@/components/Toast';
 import { useParams } from 'next/navigation';
 
 type EnrichedSubscription = Subscription & {
@@ -22,7 +23,12 @@ export default function AdminPage() {
   const [subscriptions, setSubscriptions] = useState<EnrichedSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'pending' | 'active' | 'all'>('pending');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const supabase = createClient();
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     loadSubscriptions();
@@ -90,10 +96,12 @@ export default function AdminPage() {
         .eq('id', subscriptionId);
 
       if (error) throw error;
+
+      showToast('Subscription approved successfully! User now has access.', 'success');
       loadSubscriptions();
     } catch (error) {
       console.error('Error approving subscription:', error);
-      alert('Failed to approve subscription');
+      showToast('Failed to approve subscription. Please try again.', 'error');
     }
   };
 
@@ -107,10 +115,12 @@ export default function AdminPage() {
         .eq('id', subscriptionId);
 
       if (error) throw error;
+
+      showToast('Subscription rejected. User has been notified.', 'info');
       loadSubscriptions();
     } catch (error) {
       console.error('Error rejecting subscription:', error);
-      alert('Failed to reject subscription');
+      showToast('Failed to reject subscription. Please try again.', 'error');
     }
   };
 
@@ -355,6 +365,14 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

@@ -92,16 +92,19 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(`/${locale}/auth`, request.url))
     }
 
+    // Check if user is admin
+    const adminEmails = (process.env.ADMIN_EMAILS || 'naimakunambi@gmail.com').split(',').map(e => e.trim())
+    const isUserAdmin = adminEmails.includes(user.email || '')
+
     // Admin route check (no DB query needed)
     if (isAdminRoute) {
-      const adminEmails = (process.env.ADMIN_EMAILS || 'naimakunambi@gmail.com').split(',').map(e => e.trim())
-      if (!adminEmails.includes(user.email || '')) {
+      if (!isUserAdmin) {
         return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url))
       }
     }
 
-    // Check onboarding completion (except for onboarding and pricing pages)
-    if (!pathname.includes('/onboarding') && !pathname.includes('/pricing')) {
+    // Check onboarding completion (except for onboarding and pricing pages, and skip for admins)
+    if (!pathname.includes('/onboarding') && !pathname.includes('/pricing') && !isUserAdmin) {
       try {
         const { data: profile, error: profileError } = await Promise.race([
           supabase

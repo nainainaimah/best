@@ -154,16 +154,25 @@ export default function PostEditPage() {
   };
 
   const handleSave = async (isDraft = true) => {
-    if (!title) {
-      showToast('Please enter a title', 'error');
-      return;
-    }
-
     setSaving(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Auto-generate title if empty
+      let postTitle = title.trim();
+      if (!postTitle) {
+        if (caption && caption.trim()) {
+          // Use first line of caption (max 50 chars)
+          const firstLine = caption.trim().split('\n')[0];
+          postTitle = firstLine.length > 50 ? firstLine.substring(0, 47) + '...' : firstLine;
+        } else {
+          // Use date/time format
+          const now = new Date();
+          postTitle = `Post – ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+      }
 
       let scheduled_at = null;
       if (scheduledDate && scheduledTime) {
@@ -172,7 +181,7 @@ export default function PostEditPage() {
 
       const postData = {
         user_id: user.id,
-        title,
+        title: postTitle,
         caption,
         category,
         media_url: mediaUrl,
@@ -208,11 +217,6 @@ export default function PostEditPage() {
   };
 
   const handleSchedule = async () => {
-    if (!title) {
-      showToast('Please enter a title', 'error');
-      return;
-    }
-
     if (!scheduledDate || !scheduledTime) {
       showToast('Please select date and time', 'error');
       return;
@@ -236,9 +240,22 @@ export default function PostEditPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Auto-generate title if empty
+      let postTitle = title.trim();
+      if (!postTitle) {
+        if (caption && caption.trim()) {
+          // Use first line of caption (max 50 chars)
+          const firstLine = caption.trim().split('\n')[0];
+          postTitle = firstLine.length > 50 ? firstLine.substring(0, 47) + '...' : firstLine;
+        } else {
+          // Use scheduled date/time format
+          postTitle = `Post – ${scheduledDateTime.toLocaleDateString()} ${scheduledDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+      }
+
       const postData = {
         user_id: user.id,
-        title,
+        title: postTitle,
         caption,
         category,
         media_url: mediaUrl,

@@ -96,11 +96,17 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Add timeout to prevent hanging
+      const { data: profile } = await Promise.race([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single(),
+        new Promise<{ data: null }>((resolve) =>
+          setTimeout(() => resolve({ data: null }), 3000)
+        )
+      ]);
 
       if (profile && !profile.onboarding_complete) {
         // Resume onboarding with existing data
@@ -119,32 +125,38 @@ export default function OnboardingPage() {
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+      // Continue with default data if profile load fails
     }
   };
 
-  // Autosave on step change
+  // Autosave on step change (debounced to avoid excessive API calls)
   const saveProgress = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase.from('profiles').upsert({
+      // Only save non-empty data to reduce payload size
+      const dataToSave: any = {
         user_id: user.id,
-        display_name: data.display_name,
-        brand_name: data.brand_name,
-        avatar_url: data.avatar_url,
-        brand_colors: data.brand_colors,
-        brand_voice_data: data.brand_voice_data,
-        platforms: data.platforms,
-        content_pillars: data.content_pillars,
-        caption_preferences: data.caption_preferences,
-        grid_preferences: data.grid_preferences,
         onboarding_complete: false,
-      }, {
+      };
+
+      if (data.display_name) dataToSave.display_name = data.display_name;
+      if (data.brand_name) dataToSave.brand_name = data.brand_name;
+      if (data.avatar_url) dataToSave.avatar_url = data.avatar_url;
+      if (data.brand_colors) dataToSave.brand_colors = data.brand_colors;
+      if (data.brand_voice_data) dataToSave.brand_voice_data = data.brand_voice_data;
+      if (data.platforms && data.platforms.some(p => p.enabled)) dataToSave.platforms = data.platforms;
+      if (data.content_pillars && data.content_pillars.length > 0) dataToSave.content_pillars = data.content_pillars;
+      if (data.caption_preferences) dataToSave.caption_preferences = data.caption_preferences;
+      if (data.grid_preferences) dataToSave.grid_preferences = data.grid_preferences;
+
+      await supabase.from('profiles').upsert(dataToSave, {
         onConflict: 'user_id'
       });
     } catch (error) {
       console.error('Error saving progress:', error);
+      // Don't block user flow on save errors
     }
   };
 
@@ -199,8 +211,16 @@ export default function OnboardingPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert('Image size must be less than 5MB');
       return;
     }
 
@@ -214,7 +234,10 @@ export default function OnboardingPage() {
 
       const { error: uploadError } = await supabase.storage
         .from('uploads')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 

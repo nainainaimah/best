@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
@@ -17,8 +17,28 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const supabase = createClient();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // User has valid session, redirect to dashboard
+          router.push(`/${locale}/dashboard`);
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, [supabase, router, locale]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,26 +47,58 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
-        if (error) throw error;
-        router.push(`/${locale}/onboarding`);
+
+        if (error) {
+          throw error;
+        }
+
+        // Only redirect if signup was successful and user exists
+        if (data.user) {
+          router.push(`/${locale}/onboarding`);
+        } else {
+          // This shouldn't normally happen, but handle it gracefully
+          setError('Signup failed. Please try again.');
+          setLoading(false);
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (error) throw error;
-        router.push(`/${locale}/dashboard`);
+
+        if (error) {
+          throw error;
+        }
+
+        // Only redirect if login was successful and user exists
+        if (data.user) {
+          router.push(`/${locale}/dashboard`);
+        } else {
+          setError('Login failed. Please try again.');
+          setLoading(false);
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
-    } finally {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

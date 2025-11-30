@@ -23,8 +23,27 @@ export default function UploadProof({ locale }: UploadProofProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!file) {
       setError('Please select a screenshot');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      setError('Image size must be less than 10MB');
+      return;
+    }
+
+    if (!referenceNumber.trim()) {
+      setError('Please enter a reference number');
       return;
     }
 
@@ -33,7 +52,7 @@ export default function UploadProof({ locale }: UploadProofProps) {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) throw new Error('Not authenticated. Please log in and try again.');
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
@@ -41,7 +60,10 @@ export default function UploadProof({ locale }: UploadProofProps) {
 
       const { error: uploadError } = await supabase.storage
         .from('uploads')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
@@ -63,7 +85,7 @@ export default function UploadProof({ locale }: UploadProofProps) {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push(`/${locale}/dashboard`);
+        router.push(`/${locale}/account-status`);
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'An error occurred');

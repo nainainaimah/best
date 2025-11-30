@@ -232,6 +232,7 @@ export default function GridPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [gridMode, setGridMode] = useState<'instagram' | 'generic'>('instagram');
   const [patternMode, setPatternMode] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -252,16 +253,27 @@ export default function GridPage() {
   }, [gridMode]);
 
   const loadData = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setError('Not authenticated. Please log in.');
+        return;
+      }
 
       // Load profile
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile error:', profileError);
+        // Don't block on profile error, just log it
+      }
       setProfile(profileData);
 
       // Load posts based on grid mode
@@ -276,7 +288,11 @@ export default function GridPage() {
       }
 
       // Sort by grid_position if set, otherwise by scheduled_at
-      const { data: postsData } = await query.order('grid_position', { ascending: true, nullsFirst: false });
+      const { data: postsData, error: postsError } = await query.order('grid_position', { ascending: true, nullsFirst: false });
+
+      if (postsError) {
+        throw new Error(`Failed to load posts: ${postsError.message}`);
+      }
 
       // Filter and re-sort: posts with grid_position first, then by scheduled_at
       const sortedPosts = (postsData || []).sort((a, b) => {
@@ -289,8 +305,10 @@ export default function GridPage() {
       });
 
       setPosts(sortedPosts);
-    } catch (error) {
+      setError(null);
+    } catch (error: any) {
       console.error('Error loading data:', error);
+      setError(error.message || 'Failed to load grid data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -621,9 +639,36 @@ export default function GridPage() {
           </div>
         )}
 
+        {/* Error Display */}
+        {error && (
+          <div className="card bg-red-50 border-2 border-red-200 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="text-2xl">⚠️</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900 mb-1">Error Loading Grid</h3>
+                <p className="text-sm text-red-700 mb-3">{error}</p>
+                <button
+                  onClick={loadData}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Grid */}
         <div className="card">
-          {posts.length === 0 ? (
+          {error ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">😞</div>
+              <h3 className="text-xl font-semibold mb-2">Failed to Load Grid</h3>
+              <p className="text-gray-600 mb-6">
+                Please try refreshing or check your connection.
+              </p>
+            </div>
+          ) : posts.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🎨</div>
               <h3 className="text-xl font-semibold mb-2">No posts yet</h3>

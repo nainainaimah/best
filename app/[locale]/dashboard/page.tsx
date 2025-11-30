@@ -242,17 +242,26 @@ export default function DashboardPage() {
                 </div>
                 {aiInsights.suggestions && aiInsights.suggestions.length > 0 && (
                   <div className="space-y-2 mt-4">
-                    {aiInsights.suggestions.map((suggestion, idx) => (
-                      <Link
-                        key={idx}
-                        href={suggestion.actionLink || '/dashboard'}
-                        className="flex items-center gap-2 p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border border-blue-100"
-                      >
-                        <span className="text-blue-600">💡</span>
-                        <span className="text-sm text-blue-900">{suggestion.text}</span>
-                        <span className="ml-auto text-blue-600">→</span>
-                      </Link>
-                    ))}
+                    {aiInsights.suggestions.map((suggestion, idx) => {
+                      // Ensure action link includes locale
+                      let href = suggestion.actionLink || `/${locale}/post/new`;
+                      // If actionLink doesn't start with locale, prepend it
+                      if (href.startsWith('/') && !href.startsWith(`/${locale}`)) {
+                        href = `/${locale}${href}`;
+                      }
+
+                      return (
+                        <Link
+                          key={idx}
+                          href={href}
+                          className="flex items-center gap-2 p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border border-blue-100"
+                        >
+                          <span className="text-blue-600">💡</span>
+                          <span className="text-sm text-blue-900">{suggestion.text}</span>
+                          <span className="ml-auto text-blue-600">→</span>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
                 {loadingInsights && (
