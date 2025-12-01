@@ -53,6 +53,13 @@ export type CaptionPreferences = {
   defaultLanguage?: 'en' | 'swa' | 'both';
 };
 
+export type ContentPillar = {
+  id: string; // Unique identifier (slugified name)
+  name: string; // Display name
+  color: string; // Hex color for visual identification
+  description?: string; // Optional description
+};
+
 export type GridPreferences = {
   primaryPlatform?: 'generic' | 'instagram' | 'pinterest';
   careAboutPatterns?: boolean;
@@ -78,7 +85,7 @@ export type Profile = {
   onboarding_complete: boolean;
   brand_colors: BrandColors;
   platforms: Platform[];
-  content_pillars: string[]; // Array of pillar names
+  content_pillars: ContentPillar[] | string[]; // Array of pillar objects (v2) or names (v1 legacy)
   posting_habits: PostingHabits;
   caption_preferences: CaptionPreferences;
   grid_preferences: GridPreferences;

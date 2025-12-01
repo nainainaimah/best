@@ -8,8 +8,9 @@ import Link from 'next/link';
 import LanguageToggle from '@/components/LanguageToggle';
 import LogoutButton from '@/components/LogoutButton';
 import Toast from '@/components/Toast';
-import type { Profile, Platform } from '@/lib/types';
+import type { Profile, Platform, ContentPillar } from '@/lib/types';
 import { PLATFORMS, POST_CATEGORIES, CONTENT_PILLAR_SUGGESTIONS } from '@/lib/constants';
+import { getContentPillars, createPillar, migratePillars, updatePillarColor } from '@/lib/pillarUtils';
 import { User, Palette, MessageSquare, Settings, Grid3x3, FileText } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -142,14 +143,17 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage with user folder structure
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
       const { error: uploadError, data } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(uploadError.message || 'Failed to upload to storage');
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -179,20 +183,46 @@ export default function ProfilePage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate summary');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate summary');
+      }
 
       const data = await response.json();
-      setProfile({
+
+      // Update profile with new summary
+      const updatedProfile = {
         ...profile,
         brand_voice_data: {
           ...profile.brand_voice_data!,
           summary: data.summary,
         },
-      });
-      showToast('Brand voice summary regenerated!', 'success');
+      };
+
+      setProfile(updatedProfile);
+
+      // Auto-save the updated profile to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            brand_voice_data: updatedProfile.brand_voice_data,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Error saving profile:', updateError);
+          showToast('Summary generated but failed to save. Please click Save manually.', 'warning');
+          return;
+        }
+      }
+
+      showToast('Brand voice summary regenerated and saved!', 'success');
     } catch (error: any) {
       console.error('Error regenerating voice:', error);
-      showToast(error.message || 'Failed to regenerate voice', 'error');
+      showToast(error.message || 'Failed to regenerate voice. Please check your settings and try again.', 'error');
     } finally {
       setRegeneratingVoice(false);
     }
@@ -226,19 +256,40 @@ export default function ProfilePage() {
   };
 
   const addContentPillar = () => {
-    const pillar = prompt('Enter a new content pillar:');
-    if (pillar && pillar.trim()) {
+    const pillarName = prompt('Enter a new content pillar:');
+    if (pillarName && pillarName.trim()) {
+      const currentPillars = migratePillars(profile.content_pillars || []);
+      const newPillar = createPillar(pillarName.trim(), currentPillars);
+
+      // Check if pillar already exists
+      if (currentPillars.some(p => p.id === newPillar.id)) {
+        showToast('A pillar with this name already exists', 'error');
+        return;
+      }
+
       setProfile({
         ...profile,
-        content_pillars: [...(profile.content_pillars || []), pillar.trim()],
+        content_pillars: [...currentPillars, newPillar],
       });
     }
   };
 
   const removeContentPillar = (index: number) => {
+    const currentPillars = migratePillars(profile.content_pillars || []);
     setProfile({
       ...profile,
-      content_pillars: (profile.content_pillars || []).filter((_, i) => i !== index),
+      content_pillars: currentPillars.filter((_, i) => i !== index),
+    });
+  };
+
+  const changePillarColor = (index: number, newColor: string) => {
+    const currentPillars = migratePillars(profile.content_pillars || []);
+    const updatedPillars = currentPillars.map((p, i) =>
+      i === index ? { ...p, color: newColor } : p
+    );
+    setProfile({
+      ...profile,
+      content_pillars: updatedPillars,
     });
   };
 
@@ -515,10 +566,9 @@ export default function ProfilePage() {
                 <h4 className="font-semibold">Tone Preferences</h4>
 
                 {[
-                  { key: 'casual_professional', left: 'Casual', right: 'Professional' },
+                  { key: 'formal_casual', left: 'Formal', right: 'Casual' },
                   { key: 'playful_serious', left: 'Playful', right: 'Serious' },
-                  { key: 'short_detailed', left: 'Short & Punchy', right: 'Detailed' },
-                  { key: 'formal_conversational', left: 'Formal', right: 'Conversational' },
+                  { key: 'bold_soft', left: 'Bold', right: 'Soft' },
                 ].map(({ key, left, right }) => (
                   <div key={key}>
                     <div className="flex items-center justify-between text-sm mb-2">
@@ -638,18 +688,42 @@ export default function ProfilePage() {
               {/* Content Pillars */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium">Content Pillars</label>
+                  <div>
+                    <label className="text-sm font-medium">Content Pillars</label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Define your main content types. These will be used in Create Post and Pattern Mode.
+                    </p>
+                  </div>
                   <button onClick={addContentPillar} className="btn btn-secondary btn-sm">
                     + Add Pillar
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {(profile.content_pillars || []).map((pillar, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                      <span className="flex-1">{pillar}</span>
+                  {migratePillars(profile.content_pillars || []).map((pillar, index) => (
+                    <div key={pillar.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      {/* Color Picker */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={pillar.color}
+                          onChange={(e) => changePillarColor(index, e.target.value)}
+                          className="w-10 h-10 rounded border-2 border-gray-300 cursor-pointer"
+                          title="Change pillar color"
+                        />
+                      </div>
+
+                      {/* Pillar Name with Color Badge */}
+                      <div
+                        className="px-3 py-1 rounded-md text-white font-medium flex-1"
+                        style={{ backgroundColor: pillar.color }}
+                      >
+                        {pillar.name}
+                      </div>
+
+                      {/* Remove Button */}
                       <button
                         onClick={() => removeContentPillar(index)}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                        className="text-red-600 hover:text-red-800 text-sm font-medium px-2"
                       >
                         Remove
                       </button>
@@ -661,6 +735,16 @@ export default function ProfilePage() {
                     </p>
                   )}
                 </div>
+
+                {/* Info Box */}
+                {migratePillars(profile.content_pillars || []).length > 0 && (
+                  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-800">
+                      <strong>Tip:</strong> These pillars will appear as categories when creating posts,
+                      and you can use them to create visual patterns in your Instagram grid.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Posting Frequency */}
@@ -692,6 +776,9 @@ export default function ProfilePage() {
               {/* Caption Preferences */}
               <div className="space-y-4">
                 <h4 className="font-semibold">Default Caption Settings</h4>
+                <p className="text-sm text-gray-600">
+                  These settings will be used as defaults when generating AI captions for your posts. You can always adjust them individually for each post.
+                </p>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Emoji Count</label>
@@ -703,11 +790,14 @@ export default function ProfilePage() {
                     })}
                     className="input"
                   >
-                    <option value="none">None</option>
-                    <option value="minimal">Minimal (1-2)</option>
-                    <option value="medium">Medium (3-5)</option>
-                    <option value="heavy">Heavy (6+)</option>
+                    <option value="none">None - No emojis in captions</option>
+                    <option value="minimal">Minimal (1-2) - Light emoji usage</option>
+                    <option value="medium">Medium (3-5) - Balanced emoji presence</option>
+                    <option value="heavy">Heavy (6+) - Emoji-rich captions</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Controls how many emojis appear in AI-generated captions. Choose based on your brand personality.
+                  </p>
                 </div>
 
                 <div>
@@ -720,11 +810,14 @@ export default function ProfilePage() {
                     })}
                     className="input"
                   >
-                    <option value="none">None</option>
-                    <option value="minimal">Minimal (1-3)</option>
-                    <option value="medium">Medium (5-10)</option>
-                    <option value="heavy">Heavy (15+)</option>
+                    <option value="none">None - No hashtags</option>
+                    <option value="minimal">Minimal (1-3) - Focused hashtags</option>
+                    <option value="medium">Medium (5-10) - Balanced reach</option>
+                    <option value="heavy">Heavy (15+) - Maximum reach</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Determines hashtag quantity for generated content. More hashtags = broader reach but may look spammy. Instagram allows up to 30.
+                  </p>
                 </div>
 
                 <div>
@@ -737,11 +830,14 @@ export default function ProfilePage() {
                     })}
                     className="input"
                   >
-                    <option value="none">None</option>
-                    <option value="subtle">Subtle</option>
-                    <option value="direct">Direct</option>
-                    <option value="urgent">Urgent</option>
+                    <option value="none">None - No CTA</option>
+                    <option value="subtle">Subtle - "Let us know your thoughts"</option>
+                    <option value="direct">Direct - "Click the link in bio"</option>
+                    <option value="urgent">Urgent - "Limited time! Act now"</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    How aggressively captions should encourage audience action. Subtle works for engagement, Direct for conversions, Urgent for sales.
+                  </p>
                 </div>
               </div>
 
@@ -749,17 +845,22 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <h4 className="font-semibold">Grid Preferences</h4>
 
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={profile.grid_preferences?.showBrandFrame || false}
-                    onChange={(e) => setProfile({
-                      ...profile,
-                      grid_preferences: { ...profile.grid_preferences!, showBrandFrame: e.target.checked }
-                    })}
-                    className="w-5 h-5 accent-primary-600"
-                  />
-                  <label className="text-sm">Show brand color frame around grid tiles</label>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={profile.grid_preferences?.showBrandFrame || false}
+                      onChange={(e) => setProfile({
+                        ...profile,
+                        grid_preferences: { ...profile.grid_preferences!, showBrandFrame: e.target.checked }
+                      })}
+                      className="w-5 h-5 accent-primary-600"
+                    />
+                    <label className="text-sm">Show brand color frame around grid tiles</label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 ml-8">
+                    Adds a colored border using your brand colors to each post in the grid preview. Helps visualize your brand consistency.
+                  </p>
                 </div>
 
                 <div>
@@ -772,11 +873,29 @@ export default function ProfilePage() {
                     })}
                     className="input"
                   >
-                    <option value="checkerboard">Checkerboard</option>
-                    <option value="row_theme">Row Theme</option>
-                    <option value="diagonal">Diagonal</option>
-                    <option value="rainbow">Rainbow</option>
+                    <option value="checkerboard">Checkerboard - Alternating content pillars</option>
+                    <option value="row_theme">Row Theme - Each row is a different pillar</option>
+                    <option value="diagonal">Diagonal - Content types flow diagonally</option>
+                    <option value="rainbow">Rainbow - Sorted by content pillar order</option>
                   </select>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-blue-900 font-medium mb-2">What is a Preferred Pattern?</p>
+                    <p className="text-xs text-blue-800 mb-2">
+                      A pattern defines how your posts are arranged in your Instagram grid based on your content pillars (e.g., Educational, Offers, Behind the Scenes).
+                    </p>
+                    <p className="text-xs text-blue-800 mb-2">
+                      <strong>Examples:</strong>
+                    </p>
+                    <ul className="text-xs text-blue-800 space-y-1 ml-4">
+                      <li>• <strong>Checkerboard:</strong> Educational post → Offer → Educational → Offer (creates diagonal lines)</li>
+                      <li>• <strong>Row Theme:</strong> Top row: Educational, Middle row: Personal, Bottom row: Offers</li>
+                      <li>• <strong>Diagonal:</strong> Content types flow diagonally across the grid for visual interest</li>
+                      <li>• <strong>Rainbow:</strong> Cycles through all your content pillars in order</li>
+                    </ul>
+                    <p className="text-xs text-blue-800 mt-2">
+                      Your pattern makes your grid visually cohesive and helps balance different content types. This setting is used in the Grid Planner when you apply patterns.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

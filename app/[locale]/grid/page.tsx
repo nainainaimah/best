@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import type { Post, Profile } from '@/lib/types';
+import type { Post, Profile, ContentPillar } from '@/lib/types';
 import { PLATFORMS, POST_CATEGORIES } from '@/lib/constants';
+import { getContentPillars, getPillarColor } from '@/lib/pillarUtils';
 import LanguageToggle from '@/components/LanguageToggle';
 import LogoutButton from '@/components/LogoutButton';
 import { useParams } from 'next/navigation';
@@ -38,7 +39,8 @@ function SortableGridItem({
   onDuplicate,
   onDelete,
   showBrandFrame,
-  brandColor
+  brandColor,
+  contentPillars
 }: {
   post: Post | null;
   index: number;
@@ -49,6 +51,7 @@ function SortableGridItem({
   onDelete: (post: Post) => void;
   showBrandFrame: boolean;
   brandColor?: string;
+  contentPillars: ContentPillar[];
 }) {
   const [showActions, setShowActions] = useState(false);
 
@@ -67,10 +70,17 @@ function SortableGridItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  // Get category color for pattern mode
+  // Get category/pillar color for pattern mode
   const getCategoryColor = (category?: string) => {
-    const categoryObj = POST_CATEGORIES.find(c => c.id === category);
-    return categoryObj?.color || '#9CA3AF';
+    if (!category) return '#9CA3AF';
+    return getPillarColor(category, contentPillars);
+  };
+
+  // Get category/pillar label
+  const getCategoryLabel = (category?: string) => {
+    if (!category) return '';
+    const pillar = contentPillars.find(p => p.id === category);
+    return pillar?.name || '';
   };
 
   const borderStyle = showBrandFrame && brandColor
@@ -157,7 +167,7 @@ function SortableGridItem({
                       color: 'white'
                     }}
                   >
-                    {POST_CATEGORIES.find(c => c.id === post.category)?.label}
+                    {getCategoryLabel(post.category)}
                   </span>
                 )}
               </div>
@@ -242,14 +252,14 @@ export default function GridPage() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const supabase = createClient();
 
-  // Pattern types
+  // Pattern types - all patterns now use your content pillars
   const PATTERNS = [
-    { id: 'none', name: 'No Pattern', description: 'Chronological order' },
-    { id: 'checkerboard', name: 'Checkerboard', description: 'Alternating categories diagonally' },
-    { id: 'row', name: 'Row Alternating', description: 'Alternate by rows' },
-    { id: 'column', name: 'Column Alternating', description: 'Alternate by columns' },
-    { id: 'diagonal', name: 'Diagonal', description: 'Diagonal stripes' },
-    { id: 'rainbow', name: 'Rainbow', description: 'Color spectrum' },
+    { id: 'none', name: 'No Pattern', description: 'Chronological order (no pattern applied)' },
+    { id: 'checkerboard', name: 'Checkerboard', description: 'Alternates content pillars diagonally across the grid' },
+    { id: 'row_theme', name: 'Row Theme', description: 'Each row features a different content pillar' },
+    { id: 'column', name: 'Column Theme', description: 'Each column features a different content pillar' },
+    { id: 'diagonal', name: 'Diagonal Stripes', description: 'Content pillars flow diagonally across the grid' },
+    { id: 'rainbow', name: 'Rainbow Sequence', description: 'Cycles through all your content pillars in order' },
   ];
 
   const sensors = useSensors(
@@ -341,82 +351,103 @@ export default function GridPage() {
     const cols = 3;
     const arranged = [...postsToArrange];
 
+    // Get user's content pillars
+    const pillars = getContentPillars(profile);
+    const pillarIds = pillars.map(p => p.id);
+
+    // Group posts by their pillar
+    const postsByPillar = pillarIds.map(pillarId =>
+      arranged.filter(p => p.category === pillarId)
+    ).filter(group => group.length > 0);
+
+    // If no posts have pillars assigned, return as-is
+    if (postsByPillar.length === 0) return arranged;
+
     switch (pattern) {
       case 'checkerboard':
-        // Group by category, then alternate
-        const categories = POST_CATEGORIES.map(c => c.id);
-        const postsByCategory = categories.map(cat =>
-          arranged.filter(p => p.category === cat)
-        ).filter(group => group.length > 0);
-
+        // Alternating content pillars in a checkerboard pattern
+        // Example: Educational, Offer, Educational, Offer (creates diagonal lines)
         const checkerboard: Post[] = [];
-        let categoryIndex = 0;
         for (let i = 0; i < gridSize && checkerboard.length < arranged.length; i++) {
           const row = Math.floor(i / cols);
           const col = i % cols;
-          const patternIndex = (row + col) % postsByCategory.length;
+          const patternIndex = (row + col) % postsByPillar.length;
 
-          if (postsByCategory[patternIndex] && postsByCategory[patternIndex].length > 0) {
-            checkerboard.push(postsByCategory[patternIndex].shift()!);
+          if (postsByPillar[patternIndex] && postsByPillar[patternIndex].length > 0) {
+            checkerboard.push(postsByPillar[patternIndex].shift()!);
+          } else {
+            // If this pillar is exhausted, take from any available pillar
+            const availableGroup = postsByPillar.find(g => g.length > 0);
+            if (availableGroup) {
+              checkerboard.push(availableGroup.shift()!);
+            }
           }
         }
         return checkerboard;
 
-      case 'row':
-        // Alternate categories by row
-        const rowGroups = POST_CATEGORIES.map(c =>
-          arranged.filter(p => p.category === c.id)
-        ).filter(g => g.length > 0);
-
+      case 'row_theme':
+        // Each row is a different content pillar
+        // Example: Row 1: Educational, Row 2: Personal, Row 3: Offers
         const rowPattern: Post[] = [];
-        for (let row = 0; row < Math.ceil(gridSize / cols); row++) {
-          const groupIndex = row % rowGroups.length;
+        for (let row = 0; row < Math.ceil(gridSize / cols) && rowPattern.length < arranged.length; row++) {
+          const groupIndex = row % postsByPillar.length;
           for (let col = 0; col < cols; col++) {
-            if (rowGroups[groupIndex] && rowGroups[groupIndex].length > 0) {
-              rowPattern.push(rowGroups[groupIndex].shift()!);
+            if (postsByPillar[groupIndex] && postsByPillar[groupIndex].length > 0) {
+              rowPattern.push(postsByPillar[groupIndex].shift()!);
+            } else {
+              // Fill with any available post
+              const availableGroup = postsByPillar.find(g => g.length > 0);
+              if (availableGroup) {
+                rowPattern.push(availableGroup.shift()!);
+              }
             }
           }
         }
         return rowPattern;
 
       case 'column':
-        // Alternate categories by column
-        const colGroups = POST_CATEGORIES.map(c =>
-          arranged.filter(p => p.category === c.id)
-        ).filter(g => g.length > 0);
-
+        // Alternate pillars by column
         const colPattern: Post[] = [];
         for (let i = 0; i < gridSize && colPattern.length < arranged.length; i++) {
           const col = i % cols;
-          const groupIndex = col % colGroups.length;
-          if (colGroups[groupIndex] && colGroups[groupIndex].length > 0) {
-            colPattern.push(colGroups[groupIndex].shift()!);
+          const groupIndex = col % postsByPillar.length;
+          if (postsByPillar[groupIndex] && postsByPillar[groupIndex].length > 0) {
+            colPattern.push(postsByPillar[groupIndex].shift()!);
+          } else {
+            const availableGroup = postsByPillar.find(g => g.length > 0);
+            if (availableGroup) {
+              colPattern.push(availableGroup.shift()!);
+            }
           }
         }
         return colPattern;
 
       case 'diagonal':
-        // Diagonal stripes
-        const diagGroups = POST_CATEGORIES.map(c =>
-          arranged.filter(p => p.category === c.id)
-        ).filter(g => g.length > 0);
-
+        // Diagonal stripes of different content pillars
         const diagonal: Post[] = [];
         for (let i = 0; i < gridSize && diagonal.length < arranged.length; i++) {
           const row = Math.floor(i / cols);
           const col = i % cols;
-          const diagIndex = (row + col) % diagGroups.length;
-          if (diagGroups[diagIndex] && diagGroups[diagIndex].length > 0) {
-            diagonal.push(diagGroups[diagIndex].shift()!);
+          const diagIndex = (row + col) % postsByPillar.length;
+          if (postsByPillar[diagIndex] && postsByPillar[diagIndex].length > 0) {
+            diagonal.push(postsByPillar[diagIndex].shift()!);
+          } else {
+            const availableGroup = postsByPillar.find(g => g.length > 0);
+            if (availableGroup) {
+              diagonal.push(availableGroup.shift()!);
+            }
           }
         }
         return diagonal;
 
       case 'rainbow':
-        // Sort by category in order
+        // Sort by pillar order (cycles through all pillars in sequence)
         return arranged.sort((a, b) => {
-          const aIndex = POST_CATEGORIES.findIndex(c => c.id === a.category);
-          const bIndex = POST_CATEGORIES.findIndex(c => c.id === b.category);
+          const aIndex = pillarIds.findIndex(id => id === a.category);
+          const bIndex = pillarIds.findIndex(id => id === b.category);
+          // Posts without categories go to the end
+          if (aIndex === -1) return 1;
+          if (bIndex === -1) return -1;
           return aIndex - bIndex;
         });
 
@@ -898,6 +929,7 @@ export default function GridPage() {
                       onDelete={handleDelete}
                       showBrandFrame={showBrandFrame}
                       brandColor={brandColor}
+                      contentPillars={getContentPillars(profile)}
                     />
                   ))}
                 </div>

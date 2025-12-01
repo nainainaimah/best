@@ -5,10 +5,13 @@ import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import type { Post, Profile } from '@/lib/types';
+import type { Post, Profile, ContentPillar } from '@/lib/types';
 import { PLATFORMS, POST_CATEGORIES } from '@/lib/constants';
+import { getContentPillars } from '@/lib/pillarUtils';
 import PostNowButton from '@/components/PostNowButton';
 import LanguageToggle from '@/components/LanguageToggle';
+import PlatformIcon from '@/components/PlatformIcon';
+import { Sparkles, Calendar, Save } from 'lucide-react';
 
 export default function PostEditPage() {
   const t = useTranslations();
@@ -29,6 +32,8 @@ export default function PostEditPage() {
   const [saving, setSaving] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingTitle, setGeneratingTitle] = useState(false);
+  const [generatingHashtags, setGeneratingHashtags] = useState(false);
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState('');
   const [error, setError] = useState('');
@@ -353,6 +358,84 @@ export default function PostEditPage() {
     }
   };
 
+  const handleGenerateTitle = async () => {
+    setGeneratingTitle(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/ai/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caption: caption || undefined,
+          topic: topic || undefined,
+          pillar: category || undefined,
+          platforms: selectedPlatforms,
+          brandVoice: profile?.brand_voice_data?.summary,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate title');
+      }
+
+      if (data.title) {
+        setTitle(data.title);
+        showToast('Title generated!');
+      } else {
+        throw new Error('No title returned');
+      }
+    } catch (error: any) {
+      console.error('Error generating title:', error);
+      setError(error.message || 'Failed to generate title. Please try again.');
+    } finally {
+      setGeneratingTitle(false);
+    }
+  };
+
+  const handleGenerateHashtags = async () => {
+    setGeneratingHashtags(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/ai/generate-hashtags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caption: caption || undefined,
+          topic: topic || undefined,
+          pillar: category || undefined,
+          platforms: selectedPlatforms,
+          hashtagCount: profile?.caption_preferences?.default_hashtag_count || 'medium',
+          industry: profile?.brand_voice_data?.role,
+          targetAudience: undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate hashtags');
+      }
+
+      if (data.hashtags && data.hashtags.length > 0) {
+        // Append hashtags to caption
+        const hashtagString = '\n\n' + data.hashtags.join(' ');
+        setCaption((caption || '') + hashtagString);
+        showToast(`${data.hashtags.length} hashtags generated!`);
+      } else {
+        showToast('No hashtags generated. Try adding more context.');
+      }
+    } catch (error: any) {
+      console.error('Error generating hashtags:', error);
+      setError(error.message || 'Failed to generate hashtags. Please try again.');
+    } finally {
+      setGeneratingHashtags(false);
+    }
+  };
+
   const togglePlatform = (platformId: string) => {
     if (selectedPlatforms.includes(platformId)) {
       setSelectedPlatforms(selectedPlatforms.filter(p => p !== platformId));
@@ -411,47 +494,90 @@ export default function PostEditPage() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* AI Caption Generator */}
+            {/* AI Generators */}
             <div className="card bg-gradient-to-br from-blue-50 to-white">
-              <h3 className="font-bold mb-3 flex items-center gap-2">
-                <span>✨</span>
-                AI Caption Generator
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <Sparkles size={20} className="text-primary-600" />
+                AI Content Generators
               </h3>
+              <p className="text-xs text-gray-600 mb-4">
+                Let AI help you create engaging content. Add a topic to get started.
+              </p>
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-3">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-3 text-sm">
                   {error}
                 </div>
               )}
-              <div className="grid md:grid-cols-3 gap-3">
+
+              {/* Topic Input */}
+              <div className="grid md:grid-cols-2 gap-3 mb-3">
                 <input
                   type="text"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Topic (e.g., Summer sale)"
+                  placeholder="Topic (e.g., Summer sale, New product launch)"
                   className="input"
                 />
                 <input
                   type="text"
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  placeholder="Tone (optional)"
+                  placeholder="Tone (optional, e.g., Professional, Casual)"
                   className="input"
                 />
+              </div>
+
+              {/* AI Action Buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={handleGenerateTitle}
+                  disabled={generatingTitle}
+                  className="btn btn-secondary text-sm py-2"
+                  title="Generate a compelling title for your post"
+                >
+                  {generatingTitle ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    </span>
+                  ) : (
+                    'Generate Title'
+                  )}
+                </button>
+
                 <button
                   onClick={handleGenerateCaption}
                   disabled={generating || !topic}
-                  className="btn btn-primary"
+                  className="btn btn-primary text-sm py-2"
+                  title="Generate a full caption based on your topic"
                 >
                   {generating ? (
-                    <span className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Generating...
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                     </span>
                   ) : (
-                    'Generate'
+                    'Generate Caption'
+                  )}
+                </button>
+
+                <button
+                  onClick={handleGenerateHashtags}
+                  disabled={generatingHashtags}
+                  className="btn btn-secondary text-sm py-2"
+                  title="Generate relevant hashtags and add to caption"
+                >
+                  {generatingHashtags ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    </span>
+                  ) : (
+                    'Generate Hashtags'
                   )}
                 </button>
               </div>
+
+              <p className="text-xs text-gray-500 mt-3">
+                💡 Tip: Fill in more details below (platforms, pillar) for better results
+              </p>
             </div>
 
             {/* Title */}
@@ -571,9 +697,13 @@ export default function PostEditPage() {
                         type="checkbox"
                         checked={selectedPlatforms.includes(platform.id)}
                         onChange={() => togglePlatform(platform.id)}
-                        className="w-5 h-5"
+                        className="w-5 h-5 accent-primary-600"
                       />
-                      <span className="text-xl">{platform.icon}</span>
+                      <PlatformIcon
+                        iconName={platform.icon}
+                        size={22}
+                        color={platform.color}
+                      />
                       <span className="font-medium">{platform.name}</span>
                     </label>
                   ))
@@ -585,21 +715,31 @@ export default function PostEditPage() {
               </div>
             </div>
 
-            {/* Category */}
+            {/* Category / Content Pillar */}
             <div className="card">
               <label className="block text-sm font-medium mb-2">
-                Category
+                Content Pillar
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Choose which type of content this post belongs to. This helps with grid patterns.
+              </p>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="input"
               >
-                <option value="">Select category</option>
-                {POST_CATEGORIES.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option value="">Select content pillar</option>
+                {getContentPillars(profile).map(pillar => (
+                  <option key={pillar.id} value={pillar.id}>
+                    {pillar.name}
+                  </option>
                 ))}
               </select>
+              {getContentPillars(profile).length === 0 && (
+                <p className="text-xs text-amber-600 mt-2">
+                  💡 <Link href={`/${locale}/profile`} className="underline">Add content pillars</Link> in Settings to organize your posts better.
+                </p>
+              )}
             </div>
 
             {/* Date & Time */}

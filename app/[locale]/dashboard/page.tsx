@@ -8,7 +8,10 @@ import type { Post, Profile, AIWeeklyInsights } from '@/lib/types';
 import { PLATFORMS } from '@/lib/constants';
 import LanguageToggle from '@/components/LanguageToggle';
 import LogoutButton from '@/components/LogoutButton';
+import Logo from '@/components/Logo';
+import PlatformIcon from '@/components/PlatformIcon';
 import { useParams } from 'next/navigation';
+import { Sparkles, Grid3x3, Settings, Wrench, Calendar, FileText } from 'lucide-react';
 
 export default function DashboardPage() {
   const t = useTranslations();
@@ -159,7 +162,11 @@ export default function DashboardPage() {
   };
 
   const getPlatformIcon = (platformId: string) => {
-    return PLATFORMS.find(p => p.id === platformId)?.icon || '📱';
+    return PLATFORMS.find(p => p.id === platformId)?.icon || 'Smartphone';
+  };
+
+  const getPlatformColor = (platformId: string) => {
+    return PLATFORMS.find(p => p.id === platformId)?.color || '#6B7280';
   };
 
   const getMissingFields = (post: Post) => {
@@ -187,36 +194,46 @@ export default function DashboardPage() {
       <nav className="bg-white shadow-sm border-b-4" style={{ borderColor: profile?.brand_colors?.primary || '#6366F1' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              {profile?.avatar_url && (
-                <img
-                  src={profile.avatar_url}
-                  alt="Avatar"
-                  className="w-12 h-12 rounded-full object-cover border-2"
-                  style={{ borderColor: profile?.brand_colors?.primary || '#6366F1' }}
-                />
-              )}
-              <div>
-                <h1 className="text-2xl font-bold" style={{ color: profile?.brand_colors?.primary || '#6366F1' }}>
-                  Hi, {profile?.display_name || profile?.brand_name || 'there'}! 👋
-                </h1>
-                <p className="text-sm text-gray-600">Welcome back to PostMuse.ai</p>
+            <div className="flex items-center gap-6">
+              <Logo
+                locale={locale}
+                brandColor={profile?.brand_colors?.primary || '#6366F1'}
+              />
+              <div className="border-l-2 border-gray-200 pl-6 flex items-center gap-3">
+                {profile?.avatar_url && (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Avatar"
+                    className="w-10 h-10 rounded-full object-cover border-2"
+                    style={{ borderColor: profile?.brand_colors?.primary || '#6366F1' }}
+                  />
+                )}
+                <div>
+                  <h1 className="text-lg font-bold" style={{ color: profile?.brand_colors?.primary || '#6366F1' }}>
+                    Hi, {profile?.display_name || profile?.brand_name || 'there'}! 👋
+                  </h1>
+                  <p className="text-xs text-gray-600">Welcome back</p>
+                </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href={`/${locale}/post/new`} className="btn btn-primary">
-                ✨ Create Post
+              <Link href={`/${locale}/post/new`} className="btn btn-primary flex items-center gap-2">
+                <Sparkles size={18} />
+                Create Post
               </Link>
-              <Link href={`/${locale}/grid`} className="btn btn-secondary">
-                🎨 Grid
+              <Link href={`/${locale}/grid`} className="btn btn-secondary flex items-center gap-2">
+                <Grid3x3 size={18} />
+                Grid
               </Link>
-              <Link href={`/${locale}/profile`} className="btn btn-secondary">
-                ⚙️ Settings
+              <Link href={`/${locale}/profile`} className="btn btn-secondary flex items-center gap-2">
+                <Settings size={18} />
+                Settings
               </Link>
               {isAdmin && (
-                <Link href={`/${locale}/admin`} className="btn btn-secondary">
-                  🔧 Admin
+                <Link href={`/${locale}/admin`} className="btn btn-secondary flex items-center gap-2">
+                  <Wrench size={18} />
+                  Admin
                 </Link>
               )}
               <LanguageToggle />
@@ -314,9 +331,12 @@ export default function DashboardPage() {
                             {post.platforms && post.platforms.length > 0 && (
                               <div className="flex items-center gap-1">
                                 {post.platforms.slice(0, 3).map((platform, idx) => (
-                                  <span key={idx} className="text-sm">
-                                    {getPlatformIcon(platform)}
-                                  </span>
+                                  <PlatformIcon
+                                    key={idx}
+                                    iconName={getPlatformIcon(platform)}
+                                    size={16}
+                                    color={getPlatformColor(platform)}
+                                  />
                                 ))}
                               </div>
                             )}
@@ -373,7 +393,12 @@ export default function DashboardPage() {
                               .filter((p, i, arr) => arr.indexOf(p) === i)
                               .slice(0, 3)
                               .map((platform, i) => (
-                                <span key={i} className="text-xs">{getPlatformIcon(platform)}</span>
+                                <PlatformIcon
+                                  key={i}
+                                  iconName={getPlatformIcon(platform)}
+                                  size={14}
+                                  color={getPlatformColor(platform)}
+                                />
                               ))}
                           </div>
                         </div>

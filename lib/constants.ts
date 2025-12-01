@@ -8,16 +8,18 @@ type Category = {
   label?: string;
 
 };
+// Platform icons now use lucide-react icon names instead of emojis
+// The actual icon components should be imported where needed
 export const PLATFORMS = [
-  { id: 'instagram', name: 'Instagram', icon: '📷', color: '#E4405F' },
-  { id: 'facebook', name: 'Facebook', icon: '👍', color: '#1877F2' },
-  { id: 'x', name: 'X (Twitter)', icon: '𝕏', color: '#000000' },
-  { id: 'tiktok', name: 'TikTok', icon: '🎵', color: '#000000' },
-  { id: 'whatsapp', name: 'WhatsApp', icon: '💬', color: '#25D366' },
-  { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: '#0A66C2' },
-  { id: 'blogger', name: 'Blogger', icon: '✍️', color: '#FF5722' },
-  { id: 'newsletter', name: 'Newsletter', icon: '📧', color: '#6B7280' },
-  { id: 'pinterest', name: 'Pinterest', icon: '📌', color: '#E60023' },
+  { id: 'instagram', name: 'Instagram', icon: 'Instagram', color: '#E4405F' },
+  { id: 'facebook', name: 'Facebook', icon: 'Facebook', color: '#1877F2' },
+  { id: 'x', name: 'X (Twitter)', icon: 'Twitter', color: '#000000' },
+  { id: 'tiktok', name: 'TikTok', icon: 'Music', color: '#000000' },
+  { id: 'whatsapp', name: 'WhatsApp', icon: 'MessageCircle', color: '#25D366' },
+  { id: 'linkedin', name: 'LinkedIn', icon: 'Linkedin', color: '#0A66C2' },
+  { id: 'blogger', name: 'Blog', icon: 'FileText', color: '#FF5722' },
+  { id: 'newsletter', name: 'Newsletter', icon: 'Mail', color: '#6B7280' },
+  { id: 'pinterest', name: 'Pinterest', icon: 'Image', color: '#E60023' },
 ];
 
 export const POST_CATEGORIES: Category[] = [
