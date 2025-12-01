@@ -214,7 +214,7 @@ export default function ProfilePage() {
 
         if (updateError) {
           console.error('Error saving profile:', updateError);
-          showToast('Summary generated but failed to save. Please click Save manually.', 'warning');
+          showToast('Summary generated but failed to save. Please click Save manually.', 'error');
           return;
         }
       }
