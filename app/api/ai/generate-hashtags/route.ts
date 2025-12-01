@@ -114,9 +114,9 @@ export async function POST(request: NextRequest) {
     // Parse hashtags from response
     const hashtags = hashtagsText
       .split(/\s+/)
-      .map(tag => tag.trim())
-      .filter(tag => tag.startsWith('#'))
-      .map(tag => tag.replace(/[^a-zA-Z0-9#_]/g, '')) // Clean special chars
+      .map((tag: string) => tag.trim())
+      .filter((tag: string) => tag.startsWith('#'))
+      .map((tag: string) => tag.replace(/[^a-zA-Z0-9#_]/g, '')) // Clean special chars
       .slice(0, count); // Limit to requested count
 
     return NextResponse.json({ hashtags });
