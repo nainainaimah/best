@@ -12,6 +12,7 @@ import Logo from '@/components/Logo';
 import PlatformIcon from '@/components/PlatformIcon';
 import { useParams } from 'next/navigation';
 import { Sparkles, Grid3x3, Settings, Wrench, Calendar, FileText } from 'lucide-react';
+import { getContentPillars } from '@/lib/pillarUtils';
 
 export default function DashboardPage() {
   const t = useTranslations();
@@ -459,7 +460,7 @@ export default function DashboardPage() {
                     className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow border border-purple-200"
                   >
                     <div className="text-sm font-medium text-purple-900">
-                      💡 Generate ideas for {profile.content_pillars[0]}
+                      💡 Generate ideas for {getContentPillars(profile)[0]?.name}
                     </div>
                   </Link>
                 )}
