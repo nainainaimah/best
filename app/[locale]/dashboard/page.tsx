@@ -11,7 +11,7 @@ import LogoutButton from '@/components/LogoutButton';
 import Logo from '@/components/Logo';
 import PlatformIcon from '@/components/PlatformIcon';
 import { useParams } from 'next/navigation';
-import { Sparkles, Grid3x3, Settings, Wrench, Calendar, FileText } from 'lucide-react';
+import { Sparkles, Grid3x3, Settings, Wrench, Calendar, FileText, Bot, Lightbulb, Edit, Target, Clock, CalendarDays, Hand, Sun, Palette } from 'lucide-react';
 import { getContentPillars } from '@/lib/pillarUtils';
 
 export default function DashboardPage() {
@@ -210,8 +210,9 @@ export default function DashboardPage() {
                   />
                 )}
                 <div>
-                  <h1 className="text-lg font-bold" style={{ color: profile?.brand_colors?.primary || '#6366F1' }}>
-                    Hi, {profile?.display_name || profile?.brand_name || 'there'}! 👋
+                  <h1 className="text-lg font-bold flex items-center gap-2" style={{ color: profile?.brand_colors?.primary || '#6366F1' }}>
+                    <Hand size={20} />
+                    Hi, {profile?.display_name || profile?.brand_name || 'there'}!
                   </h1>
                   <p className="text-xs text-gray-600">Welcome back</p>
                 </div>
@@ -252,7 +253,7 @@ export default function DashboardPage() {
             {aiInsights && (
               <div className="card bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200">
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="text-3xl">🤖</div>
+                  <Bot size={32} className="text-blue-600" />
                   <div className="flex-1">
                     <h3 className="font-bold text-lg text-blue-900">AI Weekly Overview</h3>
                     <p className="text-blue-700 mt-1">{aiInsights.summary}</p>
@@ -274,7 +275,7 @@ export default function DashboardPage() {
                           href={href}
                           className="flex items-center gap-2 p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border border-blue-100"
                         >
-                          <span className="text-blue-600">💡</span>
+                          <Lightbulb size={18} className="text-blue-600" />
                           <span className="text-sm text-blue-900">{suggestion.text}</span>
                           <span className="ml-auto text-blue-600">→</span>
                         </Link>
@@ -294,7 +295,10 @@ export default function DashboardPage() {
             {/* Today Section */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold">📅 Today's Posts</h3>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Calendar size={24} />
+                  Today's Posts
+                </h3>
                 <span className="text-sm text-gray-500">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </span>
@@ -326,7 +330,7 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-2">
                             {post.scheduled_at && (
                               <span className="text-xs text-gray-500">
-                                🕐 {new Date(post.scheduled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                <Clock size={14} className="inline" /> {new Date(post.scheduled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             )}
                             {post.platforms && post.platforms.length > 0 && (
@@ -349,11 +353,12 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <div className="text-gray-400 text-4xl mb-3">☀️</div>
+                  <Sun size={48} className="text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium mb-2">No posts scheduled today</p>
                   <p className="text-sm text-gray-500 mb-4">Plan your content to keep your audience engaged!</p>
                   <Link href={`/${locale}/post/new`} className="btn btn-primary">
-                    📝 Schedule Today's Post
+                    <Edit size={16} className="inline mr-1" />
+                    Schedule Today's Post
                   </Link>
                 </div>
               )}
@@ -362,7 +367,10 @@ export default function DashboardPage() {
             {/* This Week Section */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold">📆 This Week</h3>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <CalendarDays size={24} />
+                  This Week
+                </h3>
                 <Link href={`/${locale}/calendar`} className="text-sm text-primary-600 hover:underline">
                   View Full Calendar →
                 </Link>
@@ -417,7 +425,10 @@ export default function DashboardPage() {
           <div className="space-y-6">
             {/* Drafts to Finish */}
             <div className="card">
-              <h3 className="font-bold text-lg mb-4">✏️ Drafts to Finish</h3>
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <Edit size={20} />
+                Drafts to Finish
+              </h3>
               {drafts.length > 0 ? (
                 <div className="space-y-3">
                   {drafts.map(draft => {
@@ -452,7 +463,10 @@ export default function DashboardPage() {
 
             {/* Quick AI Ideas */}
             <div className="card bg-gradient-to-br from-purple-50 to-pink-50">
-              <h3 className="font-bold text-lg mb-4">✨ Quick AI Ideas</h3>
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <Sparkles size={20} />
+                Quick AI Ideas
+              </h3>
               <div className="space-y-2">
                 {profile?.content_pillars && profile.content_pillars.length > 0 && (
                   <Link
@@ -460,7 +474,8 @@ export default function DashboardPage() {
                     className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow border border-purple-200"
                   >
                     <div className="text-sm font-medium text-purple-900">
-                      💡 Generate ideas for {getContentPillars(profile)[0]?.name}
+                      <Lightbulb size={16} className="inline mr-1" />
+                      Generate ideas for {getContentPillars(profile)[0]?.name}
                     </div>
                   </Link>
                 )}
@@ -469,7 +484,8 @@ export default function DashboardPage() {
                   className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow border border-purple-200"
                 >
                   <div className="text-sm font-medium text-purple-900">
-                    🎯 Create caption with AI
+                    <Target size={16} className="inline mr-1" />
+                    Create caption with AI
                   </div>
                 </Link>
                 <Link
@@ -477,7 +493,8 @@ export default function DashboardPage() {
                   className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow border border-purple-200"
                 >
                   <div className="text-sm font-medium text-purple-900">
-                    🗓️ Suggest posting times
+                    <CalendarDays size={16} className="inline mr-1" />
+                    Suggest posting times
                   </div>
                 </Link>
               </div>
@@ -486,7 +503,10 @@ export default function DashboardPage() {
             {/* Mini Grid Preview */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">🎨 Grid Preview</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Palette size={20} />
+                  Grid Preview
+                </h3>
                 <Link href={`/${locale}/grid`} className="text-sm text-primary-600 hover:underline">
                   Full Grid →
                 </Link>

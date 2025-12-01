@@ -10,7 +10,10 @@ import type { Post, Profile, AISuggestedTime } from '@/lib/types';
 import { PLATFORMS } from '@/lib/constants';
 import LanguageToggle from '@/components/LanguageToggle';
 import LogoutButton from '@/components/LogoutButton';
+import Logo from '@/components/Logo';
+import PlatformIcon from '@/components/PlatformIcon';
 import { useParams } from 'next/navigation';
+import { BarChart3, Palette, CalendarDays, Clock, Inbox } from 'lucide-react';
 
 export default function CalendarPage() {
   const t = useTranslations();
@@ -164,7 +167,7 @@ export default function CalendarPage() {
   };
 
   const getPlatformIcon = (platformId: string) => {
-    return PLATFORMS.find(p => p.id === platformId)?.icon || '📱';
+    return PLATFORMS.find(p => p.id === platformId)?.icon || 'Smartphone';
   };
 
   const enabledPlatforms = profile?.platforms?.filter(p => p.enabled) || [];
@@ -185,15 +188,18 @@ export default function CalendarPage() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <Link href={`/${locale}/dashboard`}>
-              <h1 className="text-2xl font-bold text-primary-600">PostMuse.ai</h1>
-            </Link>
+            <Logo
+              locale={locale}
+              brandColor={profile?.brand_colors?.primary || '#6366F1'}
+            />
             <div className="flex items-center gap-4">
-              <Link href={`/${locale}/dashboard`} className="btn btn-secondary">
-                📊 Dashboard
+              <Link href={`/${locale}/dashboard`} className="btn btn-secondary flex items-center gap-2">
+                <BarChart3 size={18} />
+                Dashboard
               </Link>
-              <Link href={`/${locale}/grid`} className="btn btn-secondary">
-                🎨 Grid
+              <Link href={`/${locale}/grid`} className="btn btn-secondary flex items-center gap-2">
+                <Palette size={18} />
+                Grid
               </Link>
               <LanguageToggle />
               <LogoutButton locale={locale} />
@@ -204,7 +210,10 @@ export default function CalendarPage() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">📅 Content Calendar</h2>
+          <h2 className="text-3xl font-bold mb-2 flex items-center gap-2">
+            <CalendarDays size={32} />
+            Content Calendar
+          </h2>
           <p className="text-gray-600">Plan and manage your posting schedule</p>
         </div>
 
@@ -387,8 +396,9 @@ export default function CalendarPage() {
                       )}
                       <div className="flex items-center gap-3 text-xs text-gray-500">
                         {post.scheduled_at && (
-                          <span>
-                            🕐 {new Date(post.scheduled_at).toLocaleTimeString('en-US', {
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} />
+                            {new Date(post.scheduled_at).toLocaleTimeString('en-US', {
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
@@ -396,9 +406,18 @@ export default function CalendarPage() {
                         )}
                         {post.platforms && post.platforms.length > 0 && (
                           <div className="flex items-center gap-1">
-                            {post.platforms.map((platform, idx) => (
-                              <span key={idx}>{getPlatformIcon(platform)}</span>
-                            ))}
+                            {post.platforms.map((platform, idx) => {
+                              const iconName = getPlatformIcon(platform);
+                              const color = PLATFORMS.find(p => p.id === platform)?.color || '#6B7280';
+                              return (
+                                <PlatformIcon
+                                  key={idx}
+                                  iconName={iconName}
+                                  size={14}
+                                  color={color}
+                                />
+                              );
+                            })}
                           </div>
                         )}
                         {post.category && (
@@ -412,7 +431,7 @@ export default function CalendarPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="text-gray-400 text-5xl mb-4">📭</div>
+                  <Inbox size={60} className="text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 font-medium mb-4">No posts scheduled for this day</p>
                   <Link
                     href={`/${locale}/post/new?date=${selectedDate.toISOString().split('T')[0]}`}
