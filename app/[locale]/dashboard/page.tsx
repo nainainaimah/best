@@ -11,8 +11,8 @@ import LogoutButton from '@/components/LogoutButton';
 import Logo from '@/components/Logo';
 import PlatformIcon from '@/components/PlatformIcon';
 import { useParams } from 'next/navigation';
-import { Sparkles, Grid3x3, Settings, Wrench, Calendar, FileText, Bot, Lightbulb, Edit, Target, Clock, CalendarDays, Hand, Sun, Palette } from 'lucide-react';
-import { getContentPillars } from '@/lib/pillarUtils';
+import { Sparkles, Grid3x3, Settings, Wrench, Calendar, FileText, Bot, Lightbulb, Edit, Target, Clock, CalendarDays, Hand, Sun, Palette, PieChart, TrendingUp } from 'lucide-react';
+import { getContentPillars, getContentBalance } from '@/lib/pillarUtils';
 
 export default function DashboardPage() {
   const t = useTranslations();
@@ -499,6 +499,79 @@ export default function DashboardPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Content Pillar Balance Analytics */}
+            {profile && (
+              <div className="card bg-gradient-to-br from-indigo-50 to-blue-50">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <PieChart size={20} className="text-indigo-600" />
+                  Content Balance
+                </h3>
+                {(() => {
+                  const contentBalance = getContentBalance(
+                    [...todayPosts, ...weekPosts, ...drafts],
+                    getContentPillars(profile)
+                  );
+
+                  if (contentBalance.totalPosts === 0) {
+                    return (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        Create posts to see your content balance
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      {contentBalance.pillars
+                        .filter(p => p.count > 0)
+                        .sort((a, b) => b.count - a.count)
+                        .map(pillar => (
+                          <div key={pillar.pillarId} className="flex items-center gap-3">
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: pillar.color }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-medium text-gray-900 truncate">
+                                  {pillar.pillarName}
+                                </span>
+                                <span className="text-sm text-gray-600 ml-2">
+                                  {pillar.count} ({pillar.percentage.toFixed(0)}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${pillar.percentage}%`,
+                                    backgroundColor: pillar.color
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      {contentBalance.pillars.filter(p => p.count > 0).length === 0 && (
+                        <p className="text-sm text-gray-500 text-center py-2">
+                          No posts assigned to pillars yet
+                        </p>
+                      )}
+                      <div className="pt-3 border-t border-indigo-200">
+                        <Link
+                          href={`/${locale}/profile`}
+                          className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                        >
+                          <TrendingUp size={14} />
+                          Manage Content Pillars →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
             {/* Mini Grid Preview */}
             <div className="card">

@@ -58,6 +58,23 @@ export type ContentPillar = {
   name: string; // Display name
   color: string; // Hex color for visual identification
   description?: string; // Optional description
+  orderIndex?: number; // For sorting pillars in dropdowns and UI
+  defaultOverlay?: PostOverlay; // Default overlay pattern for this pillar
+};
+
+export type PostOverlay = {
+  color?: string; // Hex color for overlay
+  pattern?: 'solid' | 'gradient' | 'dots' | 'stripes' | 'none';
+  opacity?: number; // 0-100
+};
+
+export type PatternTemplate = {
+  id: string; // Unique pattern identifier
+  name: string; // Display name (e.g., "Balanced Mix")
+  description: string; // What this pattern does
+  template: string[]; // Array of pillar IDs in order (e.g., ["educational", "ugc", "offer"])
+  previewGrid?: number[][]; // Visual preview grid (pillar indices)
+  category?: 'balanced' | 'storytelling' | 'promotional' | 'social-proof' | 'custom';
 };
 
 export type GridPreferences = {
@@ -68,6 +85,7 @@ export type GridPreferences = {
   showPlatformIcons?: boolean;
   showCategoryLabels?: boolean;
   preferredPattern?: string;
+  activePatternTemplate?: string; // ID of active pattern template
 };
 
 // ============================================
@@ -111,11 +129,13 @@ export type Post = {
   title: string;
   caption: string;
   media_url: string | null;
-  status: 'draft' | 'scheduled' | 'posted';
+  status: 'draft' | 'scheduled' | 'posted' | 'missed';
   scheduled_at: string | null;
-  category: string | null; // LISTING, QUOTE, TIP, STORY, etc.
+  category: string | null; // Pillar ID (e.g., "educational", "ugc", "offer")
   grid_position: number | null; // Manual ordering for grid
   platforms: string[]; // Array of platform names
+  platformStatus?: Record<string, boolean>; // { instagram: true, facebook: false }
+  overlay?: PostOverlay; // Visual overlay for grid display
   created_at: string;
   updated_at: string;
   hashtags?: string[];
@@ -190,4 +210,22 @@ export type AISuggestedTime = {
   date: string; // ISO date string
   time: string; // HH:mm format
   reason?: string; // Why this time is suggested
+};
+
+// ============================================
+// Analytics Types
+// ============================================
+
+export type PillarAnalytics = {
+  pillarId: string;
+  pillarName: string;
+  color: string;
+  count: number;
+  percentage: number;
+};
+
+export type ContentBalance = {
+  pillars: PillarAnalytics[];
+  totalPosts: number;
+  recommendation?: string; // AI-generated balance suggestion
 };

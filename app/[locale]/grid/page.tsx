@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import type { Post, Profile, ContentPillar } from '@/lib/types';
-import { PLATFORMS, POST_CATEGORIES } from '@/lib/constants';
+import type { Post, Profile, ContentPillar, PatternTemplate } from '@/lib/types';
+import { PLATFORMS, PATTERN_TEMPLATES } from '@/lib/constants';
 import { getContentPillars, getPillarColor } from '@/lib/pillarUtils';
+import { applyPatternTemplate, getPatternTemplate } from '@/lib/patternEngine';
 import LanguageToggle from '@/components/LanguageToggle';
 import LogoutButton from '@/components/LogoutButton';
 import { useParams } from 'next/navigation';
@@ -252,14 +253,10 @@ export default function GridPage() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const supabase = createClient();
 
-  // Pattern types - all patterns now use your content pillars
+  // Pattern templates - using new Pattern Engine v2
   const PATTERNS = [
     { id: 'none', name: 'No Pattern', description: 'Chronological order (no pattern applied)' },
-    { id: 'checkerboard', name: 'Checkerboard', description: 'Alternates content pillars diagonally across the grid' },
-    { id: 'row_theme', name: 'Row Theme', description: 'Each row features a different content pillar' },
-    { id: 'column', name: 'Column Theme', description: 'Each column features a different content pillar' },
-    { id: 'diagonal', name: 'Diagonal Stripes', description: 'Content pillars flow diagonally across the grid' },
-    { id: 'rainbow', name: 'Rainbow Sequence', description: 'Cycles through all your content pillars in order' },
+    ...PATTERN_TEMPLATES
   ];
 
   const sensors = useSensors(
@@ -343,117 +340,23 @@ export default function GridPage() {
     }
   };
 
-  // Apply pattern to reorganize posts
-  const applyPattern = (postsToArrange: Post[], pattern: string): Post[] => {
-    if (pattern === 'none' || !postsToArrange.length) return postsToArrange;
+  // Apply pattern to reorganize posts - using Pattern Engine v2
+  const applyPattern = (postsToArrange: Post[], patternId: string): Post[] => {
+    if (patternId === 'none' || !postsToArrange.length) return postsToArrange;
 
     const gridSize = gridMode === 'instagram' ? 9 : 12;
-    const cols = 3;
-    const arranged = [...postsToArrange];
-
-    // Get user's content pillars
     const pillars = getContentPillars(profile);
-    const pillarIds = pillars.map(p => p.id);
 
-    // Group posts by their pillar
-    const postsByPillar = pillarIds.map(pillarId =>
-      arranged.filter(p => p.category === pillarId)
-    ).filter(group => group.length > 0);
+    // Get the pattern template
+    const template = getPatternTemplate(patternId, pillars, PATTERN_TEMPLATES);
 
-    // If no posts have pillars assigned, return as-is
-    if (postsByPillar.length === 0) return arranged;
-
-    switch (pattern) {
-      case 'checkerboard':
-        // Alternating content pillars in a checkerboard pattern
-        // Example: Educational, Offer, Educational, Offer (creates diagonal lines)
-        const checkerboard: Post[] = [];
-        for (let i = 0; i < gridSize && checkerboard.length < arranged.length; i++) {
-          const row = Math.floor(i / cols);
-          const col = i % cols;
-          const patternIndex = (row + col) % postsByPillar.length;
-
-          if (postsByPillar[patternIndex] && postsByPillar[patternIndex].length > 0) {
-            checkerboard.push(postsByPillar[patternIndex].shift()!);
-          } else {
-            // If this pillar is exhausted, take from any available pillar
-            const availableGroup = postsByPillar.find(g => g.length > 0);
-            if (availableGroup) {
-              checkerboard.push(availableGroup.shift()!);
-            }
-          }
-        }
-        return checkerboard;
-
-      case 'row_theme':
-        // Each row is a different content pillar
-        // Example: Row 1: Educational, Row 2: Personal, Row 3: Offers
-        const rowPattern: Post[] = [];
-        for (let row = 0; row < Math.ceil(gridSize / cols) && rowPattern.length < arranged.length; row++) {
-          const groupIndex = row % postsByPillar.length;
-          for (let col = 0; col < cols; col++) {
-            if (postsByPillar[groupIndex] && postsByPillar[groupIndex].length > 0) {
-              rowPattern.push(postsByPillar[groupIndex].shift()!);
-            } else {
-              // Fill with any available post
-              const availableGroup = postsByPillar.find(g => g.length > 0);
-              if (availableGroup) {
-                rowPattern.push(availableGroup.shift()!);
-              }
-            }
-          }
-        }
-        return rowPattern;
-
-      case 'column':
-        // Alternate pillars by column
-        const colPattern: Post[] = [];
-        for (let i = 0; i < gridSize && colPattern.length < arranged.length; i++) {
-          const col = i % cols;
-          const groupIndex = col % postsByPillar.length;
-          if (postsByPillar[groupIndex] && postsByPillar[groupIndex].length > 0) {
-            colPattern.push(postsByPillar[groupIndex].shift()!);
-          } else {
-            const availableGroup = postsByPillar.find(g => g.length > 0);
-            if (availableGroup) {
-              colPattern.push(availableGroup.shift()!);
-            }
-          }
-        }
-        return colPattern;
-
-      case 'diagonal':
-        // Diagonal stripes of different content pillars
-        const diagonal: Post[] = [];
-        for (let i = 0; i < gridSize && diagonal.length < arranged.length; i++) {
-          const row = Math.floor(i / cols);
-          const col = i % cols;
-          const diagIndex = (row + col) % postsByPillar.length;
-          if (postsByPillar[diagIndex] && postsByPillar[diagIndex].length > 0) {
-            diagonal.push(postsByPillar[diagIndex].shift()!);
-          } else {
-            const availableGroup = postsByPillar.find(g => g.length > 0);
-            if (availableGroup) {
-              diagonal.push(availableGroup.shift()!);
-            }
-          }
-        }
-        return diagonal;
-
-      case 'rainbow':
-        // Sort by pillar order (cycles through all pillars in sequence)
-        return arranged.sort((a, b) => {
-          const aIndex = pillarIds.findIndex(id => id === a.category);
-          const bIndex = pillarIds.findIndex(id => id === b.category);
-          // Posts without categories go to the end
-          if (aIndex === -1) return 1;
-          if (bIndex === -1) return -1;
-          return aIndex - bIndex;
-        });
-
-      default:
-        return arranged;
+    if (!template) {
+      console.warn(`Pattern template "${patternId}" not found, returning posts as-is`);
+      return postsToArrange;
     }
+
+    // Apply the pattern using the pattern engine
+    return applyPatternTemplate(postsToArrange, template, pillars, gridSize);
   };
 
   // Handle pattern change
@@ -841,15 +744,15 @@ export default function GridPage() {
               )}
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-2 text-purple-800">Category Colors:</h4>
+              <h4 className="font-semibold text-sm mb-2 text-purple-800">Content Pillar Colors:</h4>
               <div className="flex flex-wrap gap-2">
-                {POST_CATEGORIES.map((category) => (
-                  <div key={category.id} className="flex items-center gap-2">
+                {getContentPillars(profile).map((pillar) => (
+                  <div key={pillar.id} className="flex items-center gap-2">
                     <div
                       className="w-4 h-4 rounded"
-                      style={{ backgroundColor: category.color }}
+                      style={{ backgroundColor: pillar.color }}
                     ></div>
-                    <span className="text-sm text-gray-700">{category.label}</span>
+                    <span className="text-sm text-gray-700">{pillar.name}</span>
                   </div>
                 ))}
               </div>

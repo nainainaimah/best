@@ -1,4 +1,5 @@
 // PostMuse.ai Constants
+import type { PatternTemplate } from './types';
 
 type Category = {
   id: string;
@@ -61,6 +62,97 @@ export const GRID_PATTERNS = [
   { id: 'diagonal', name: 'Diagonal', description: 'Diagonal lines across the grid' },
   { id: 'clustered', name: 'Clustered', description: 'Group similar content together' },
   { id: 'none', name: 'None', description: 'No specific pattern' },
+];
+
+/**
+ * Pattern Templates - Pillar-aware grid patterns
+ * These templates define how content should be arranged based on pillar tags
+ */
+export const PATTERN_TEMPLATES: PatternTemplate[] = [
+  {
+    id: 'balanced-mix',
+    name: 'Balanced Mix',
+    description: 'Evenly distribute all content pillars across the grid for a balanced feed',
+    template: [], // Will be filled dynamically based on user pillars
+    previewGrid: [
+      [0, 1, 2],
+      [1, 2, 0],
+      [2, 0, 1],
+    ],
+    category: 'balanced',
+  },
+  {
+    id: 'checkerboard-ugc-offer',
+    name: 'Social Proof Checkerboard',
+    description: 'Alternate between UGC/testimonials and offers for high conversion',
+    template: [
+      'ugc', 'offer', 'ugc',
+      'offer', 'ugc', 'offer',
+      'ugc', 'offer', 'ugc',
+    ],
+    previewGrid: [
+      [0, 1, 0],
+      [1, 0, 1],
+      [0, 1, 0],
+    ],
+    category: 'social-proof',
+  },
+  {
+    id: 'storytelling-flow',
+    name: 'Storytelling Flow',
+    description: 'Build narrative with BTS → Educational → Offer pattern',
+    template: [
+      'behind-the-scenes', 'educational', 'offer',
+      'behind-the-scenes', 'educational', 'offer',
+      'behind-the-scenes', 'educational', 'offer',
+    ],
+    previewGrid: [
+      [0, 1, 2],
+      [0, 1, 2],
+      [0, 1, 2],
+    ],
+    category: 'storytelling',
+  },
+  {
+    id: 'row-theme',
+    name: 'Row Theme',
+    description: 'Each row focuses on a different content pillar',
+    template: [], // Will be filled dynamically
+    previewGrid: [
+      [0, 0, 0],
+      [1, 1, 1],
+      [2, 2, 2],
+    ],
+    category: 'balanced',
+  },
+  {
+    id: 'column-theme',
+    name: 'Column Theme',
+    description: 'Each column focuses on a different content pillar',
+    template: [], // Will be filled dynamically
+    previewGrid: [
+      [0, 1, 2],
+      [0, 1, 2],
+      [0, 1, 2],
+    ],
+    category: 'balanced',
+  },
+  {
+    id: 'launch-week',
+    name: 'Launch Week Mode',
+    description: 'Build anticipation with strategic pillar sequencing over 7 days',
+    template: [
+      'educational', 'behind-the-scenes', 'offer',
+      'ugc', 'offer', 'educational',
+      'offer',
+    ],
+    previewGrid: [
+      [0, 1, 2],
+      [3, 2, 0],
+      [2, -1, -1],
+    ],
+    category: 'promotional',
+  },
 ];
 
 export const DEFAULT_BRAND_COLORS = {

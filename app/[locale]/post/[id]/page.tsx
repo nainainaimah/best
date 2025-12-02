@@ -715,7 +715,7 @@ export default function PostEditPage() {
               </div>
             </div>
 
-            {/* Category / Content Pillar */}
+            {/* Content Pillar */}
             <div className="card">
               <label className="block text-sm font-medium mb-2">
                 Content Pillar

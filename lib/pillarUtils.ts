@@ -1,5 +1,5 @@
 // Content Pillar Utilities
-import type { ContentPillar, Profile } from './types';
+import type { ContentPillar, Profile, Post, PillarAnalytics, ContentBalance } from './types';
 import { POST_CATEGORIES } from './constants';
 
 /**
@@ -39,7 +39,12 @@ export function slugify(text: string): string {
 export function migratePillars(pillars: string[] | ContentPillar[]): ContentPillar[] {
   // If already migrated (first item has 'id' property), return as-is
   if (pillars.length > 0 && typeof pillars[0] === 'object' && 'id' in pillars[0]) {
-    return pillars as ContentPillar[];
+    const migratedPillars = pillars as ContentPillar[];
+    // Ensure all pillars have orderIndex
+    return migratedPillars.map((p, index) => ({
+      ...p,
+      orderIndex: p.orderIndex ?? index,
+    }));
   }
 
   // Convert string[] to ContentPillar[]
@@ -48,6 +53,7 @@ export function migratePillars(pillars: string[] | ContentPillar[]): ContentPill
     name: name,
     color: DEFAULT_PILLAR_COLORS[index % DEFAULT_PILLAR_COLORS.length],
     description: '',
+    orderIndex: index,
   }));
 }
 
@@ -63,10 +69,12 @@ export function getContentPillars(profile: Profile | null): ContentPillar[] {
       name: cat.name,
       color: cat.color || DEFAULT_PILLAR_COLORS[index % DEFAULT_PILLAR_COLORS.length],
       description: cat.description,
+      orderIndex: index,
     }));
   }
 
-  return migratePillars(profile.content_pillars);
+  const pillars = migratePillars(profile.content_pillars);
+  return sortPillarsByOrder(pillars);
 }
 
 /**
@@ -81,6 +89,7 @@ export function createPillar(name: string, existingPillars: ContentPillar[] = []
     name,
     color: DEFAULT_PILLAR_COLORS[colorIndex],
     description: '',
+    orderIndex: existingPillars.length,
   };
 }
 
@@ -142,11 +151,63 @@ export function removePillar(pillars: ContentPillar[], pillarId: string): Conten
 }
 
 /**
- * Reorder pillars
+ * Reorder pillars and update orderIndex
  */
 export function reorderPillars(pillars: ContentPillar[], fromIndex: number, toIndex: number): ContentPillar[] {
   const result = Array.from(pillars);
   const [removed] = result.splice(fromIndex, 1);
   result.splice(toIndex, 0, removed);
-  return result;
+
+  // Update orderIndex for all pillars
+  return result.map((pillar, index) => ({
+    ...pillar,
+    orderIndex: index,
+  }));
+}
+
+/**
+ * Sort pillars by orderIndex
+ */
+export function sortPillarsByOrder(pillars: ContentPillar[]): ContentPillar[] {
+  return [...pillars].sort((a, b) => {
+    const orderA = a.orderIndex ?? 999;
+    const orderB = b.orderIndex ?? 999;
+    return orderA - orderB;
+  });
+}
+
+/**
+ * Calculate pillar analytics from posts
+ */
+export function calculatePillarAnalytics(posts: Post[], pillars: ContentPillar[]): PillarAnalytics[] {
+  const totalPosts = posts.length;
+
+  // Count posts per pillar
+  const pillarCounts = new Map<string, number>();
+  posts.forEach(post => {
+    if (post.category) {
+      pillarCounts.set(post.category, (pillarCounts.get(post.category) || 0) + 1);
+    }
+  });
+
+  // Create analytics for each pillar
+  return pillars.map(pillar => ({
+    pillarId: pillar.id,
+    pillarName: pillar.name,
+    color: pillar.color,
+    count: pillarCounts.get(pillar.id) || 0,
+    percentage: totalPosts > 0 ? ((pillarCounts.get(pillar.id) || 0) / totalPosts) * 100 : 0,
+  }));
+}
+
+/**
+ * Get content balance summary
+ */
+export function getContentBalance(posts: Post[], pillars: ContentPillar[]): ContentBalance {
+  const analytics = calculatePillarAnalytics(posts, pillars);
+
+  return {
+    pillars: analytics,
+    totalPosts: posts.length,
+  };
 }
