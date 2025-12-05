@@ -4,6 +4,8 @@ import { getCountryMacro } from '@/lib/data/worldBank';
 import { runMarketAnalysis } from '@/lib/ai/openrouterClient';
 import type { MarketMuseInput } from '@/lib/types/marketMuse';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
